@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.auth import router as auth_router
+from app.routes.proxy import router as proxy_router
 
 app = FastAPI(title="Postman Clone API")
 
@@ -13,6 +14,8 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(proxy_router, tags=["proxy"])
+
 
 @app.get("/health")
 def health():
