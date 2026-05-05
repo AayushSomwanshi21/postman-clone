@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.env
+server/.env
+
+# Node
+node_modules/
+client/dist/
+
+# Misc
+.DS_Store
