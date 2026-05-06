@@ -1,25 +1,25 @@
 import { useRequestStore } from '@/store/requestStore';
+import { PM } from '@/lib/constants';
 
 function statusColor(code: number) {
-  if (code >= 200 && code < 300) return '#22c55e';
-  if (code >= 300 && code < 400) return '#eab308';
-  if (code >= 400) return '#ef4444';
-  return '#6b7280';
+  if (code >= 200 && code < 300) return '#49cc90';
+  if (code >= 300 && code < 400) return '#fca130';
+  if (code >= 400) return '#e74c3c';
+  return '#888';
 }
 
 export default function StatusBar() {
   const response = useRequestStore((s) => s.response);
   if (!response) return null;
 
+  const color = statusColor(response.status_code);
+
   return (
-    <div className="flex items-center text-sm">
-      <span
-        className="px-2 py-0.5 rounded text-white text-xs font-semibold"
-        style={{ backgroundColor: statusColor(response.status_code) }}
-      >
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12 }}>
+      <span style={{ color, fontWeight: 700 }}>
         {response.status_code}
       </span>
-      <span className="text-muted-foreground" style={{ marginLeft: '3rem' }}>{response.elapsed_ms} ms</span>
+      <span style={{ color: PM.muted }}>{response.elapsed_ms} ms</span>
     </div>
   );
 }

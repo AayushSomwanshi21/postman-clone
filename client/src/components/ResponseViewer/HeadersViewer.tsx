@@ -1,15 +1,17 @@
 import { useRequestStore } from '@/store/requestStore';
+import { PM } from '@/lib/constants';
 
 export default function HeadersViewer() {
   const response = useRequestStore((s) => s.response);
   if (!response) return null;
 
   return (
-    <div className="font-mono text-xs space-y-1 p-2">
+    <div style={{ fontFamily: 'monospace', fontSize: 12, padding: '8px 16px' }}>
       {Object.entries(response.headers).map(([key, value]) => (
-        <div key={key} className="flex gap-2">
-          <span className="text-muted-foreground min-w-48">{key}</span>
-          <span className="break-all">{value}</span>
+        <div key={key} style={{ display: 'flex', gap: 16, padding: '3px 0',
+          borderBottom: `1px solid ${PM.bgHover}` }}>
+          <span style={{ color: PM.muted, minWidth: 200, flexShrink: 0 }}>{key}</span>
+          <span style={{ color: PM.text, wordBreak: 'break-all' }}>{value}</span>
         </div>
       ))}
     </div>
