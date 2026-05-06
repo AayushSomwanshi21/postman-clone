@@ -3,7 +3,7 @@ from app.schemas.proxy import ProxyRequest
 from app.services.proxy_service import forward_request
 from app.middleware.auth import get_current_user
 
-router = APIRouter()
+router = APIRouter(tags=["proxy"])
 
 
 @router.post("/proxy")

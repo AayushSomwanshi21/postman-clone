@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
+from app.models.workspace import Workspace
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.services.auth_service import hash_password, verify_password, create_access_token
 from app.middleware.auth import get_current_user
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=Token)
@@ -20,8 +21,11 @@ def register(body: UserCreate, db: Session = Depends(get_db)):
     hashed_password = hash_password(body.password)
     user = User(email=body.email, name=body.name, password=hashed_password)
     db.add(user)
+    db.flush()
+
+    workspace = Workspace(owner_id=user.id, name="My Workspace")
+    db.add(workspace)
     db.commit()
-    db.refresh(user)
 
     return Token(access_token=create_access_token(str(user.id)))
 
