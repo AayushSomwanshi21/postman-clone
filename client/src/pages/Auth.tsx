@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
+import { useWorkspaceStore } from '@/store/workspaceStore';
 import api from '@/lib/api';
 
 export default function Auth() {
@@ -24,6 +25,7 @@ export default function Auth() {
       const payload = mode === 'login' ? { email, password } : { email, name, password };
       const { data } = await api.post(endpoint, payload);
       setToken(data.access_token);
+      await useWorkspaceStore.getState().fetchWorkspaces();
     } catch (err: any) {
       setError(err.response?.data?.detail ?? 'Something went wrong');
     } finally {

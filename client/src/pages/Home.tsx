@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UrlBar from '@/components/RequestBuilder/UrlBar';
 import ParamsTab from '@/components/RequestBuilder/ParamsTab';
 import HeadersTab from '@/components/RequestBuilder/HeadersTab';
@@ -9,6 +9,11 @@ import BodyViewer from '@/components/ResponseViewer/BodyViewer';
 import HeadersViewer from '@/components/ResponseViewer/HeadersViewer';
 import { useAuthStore } from '@/store/authStore';
 import { useRequestStore } from '@/store/requestStore';
+import { useWorkspaceStore } from '@/store/workspaceStore';
+import { useTabStore } from '@/store/tabStore';
+import { useCollectionStore } from '@/store/collectionStore';
+import CollectionList from '@/components/CollectionPanel/CollectionList';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PM, METHOD_HEX } from '@/lib/constants';
 
 function methodColor(m: string) {
@@ -20,16 +25,31 @@ type ResponseTab = 'body' | 'headers';
 
 export default function Home() {
   const logout = useAuthStore((s) => s.logout);
-  const { method, url, response, headers, params } = useRequestStore();
+  const { response, headers, params } = useRequestStore();
+  const { activeWorkspace, fetchWorkspaces } = useWorkspaceStore();
+  const { tabs, activeTabId, closeTab, setActiveTab } = useTabStore();
+  const { requestsByCollection } = useCollectionStore();
   const [activeReqTab, setActiveReqTab] = useState<RequestTab>('params');
   const [activeResTab, setActiveResTab] = useState<ResponseTab>('body');
+
+  useEffect(() => { fetchWorkspaces(); }, []);
 
   const headerCount = headers.filter((h) => h.enabled && h.key).length;
   const paramCount = params.filter((p) => p.enabled && p.key).length;
 
-  const tabLabel = url
-    ? url.replace(/^https?:\/\//, '').slice(0, 28) + (url.length > 36 ? '…' : '')
-    : 'New Request';
+  function handleTabClick(tabId: string) {
+    setActiveTab(tabId);
+    const request = Object.values(requestsByCollection).flat().find((r) => r.id === tabId);
+    if (request) {
+      useRequestStore.getState().loadRequest(request);
+    } else {
+      useRequestStore.setState({
+        name: null, method: 'GET', url: '', body: '', response: null,
+        headers: [{ key: '', value: '', enabled: true }],
+        params: [{ key: '', value: '', enabled: true }],
+      });
+    }
+  }
 
   const reqTabs: { id: RequestTab; label: string; count?: number }[] = [
     { id: 'params', label: 'Params', count: paramCount },
@@ -57,7 +77,7 @@ export default function Home() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#fff', fontSize: 10, fontWeight: 800
           }}>P</div>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>My Workspace</span>
+          <span style={{ fontSize: 13, fontWeight: 500 }}>{activeWorkspace?.name ?? 'My Workspace'}</span>
           <span style={{ color: PM.muted, fontSize: 9 }}>▾</span>
         </div>
 
@@ -88,52 +108,6 @@ export default function Home() {
             Sign out
           </button>
         </div>
-      </div>
-
-      {/* ── TAB BAR ─────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', height: 36,
-        background: PM.bgPanel, borderBottom: `1px solid ${PM.border}`,
-        flexShrink: 0, overflow: 'hidden'
-      }}>
-
-        {/* Overview tab */}
-        <div style={{
-          display: 'flex', alignItems: 'center', height: '100%',
-          padding: '0 16px', borderRight: `1px solid ${PM.border}`,
-          color: PM.muted, fontSize: 13, cursor: 'pointer', gap: 6
-        }}>
-          <span style={{ fontSize: 14, opacity: 0.7 }}>⊙</span>
-          Overview
-        </div>
-
-        {/* Active request tab */}
-        <div style={{
-          display: 'flex', alignItems: 'center', height: '100%',
-          padding: '0 14px', borderRight: `1px solid ${PM.border}`,
-          background: PM.bgContent, fontSize: 13, cursor: 'pointer',
-          gap: 8, position: 'relative', minWidth: 0
-        }}>
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            height: 2, background: PM.accent
-          }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: methodColor(method) }}>
-            {method}
-          </span>
-          <span style={{
-            color: PM.text, maxWidth: 200,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-          }}>
-            {tabLabel}
-          </span>
-          <span style={{ color: '#555', marginLeft: 2, fontSize: 15, lineHeight: 1 }}>×</span>
-        </div>
-
-        <button style={{
-          padding: '0 12px', color: '#555', background: 'none',
-          border: 'none', cursor: 'pointer', fontSize: 18, height: '100%'
-        }}>+</button>
       </div>
 
       {/* ── MAIN BODY ───────────────────────────────────────────── */}
@@ -186,24 +160,7 @@ export default function Home() {
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', padding: '4px 4px 6px'
-            }}>
-              <span style={{
-                fontSize: 11, fontWeight: 600, color: '#666',
-                textTransform: 'uppercase', letterSpacing: '0.06em'
-              }}>Collections</span>
-              <button style={{
-                color: '#666', background: 'none', border: 'none',
-                cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px'
-              }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = PM.text)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}>+</button>
-            </div>
-            <div style={{ fontSize: 12, color: '#4a4a4a', padding: '6px 4px', lineHeight: 1.5 }}>
-              No collections yet.<br />Create one to get started.
-            </div>
+            <CollectionList />
           </div>
 
           <div style={{ borderTop: `1px solid ${PM.border}` }}>
@@ -228,6 +185,39 @@ export default function Home() {
           flex: 1, display: 'flex', flexDirection: 'column',
           overflow: 'hidden', background: PM.bgContent
         }}>
+
+          {/* ── TAB BAR ── */}
+          <Tabs value={activeTabId} onValueChange={handleTabClick} style={{ flexShrink: 0 }}>
+            <TabsList variant="line" style={{
+              height: 36, borderRadius: 0, justifyContent: 'flex-start', alignItems: 'flex-end',
+              background: PM.bgPanel, borderBottom: `1px solid ${PM.border}`, padding: '0 4px', gap: 2,
+            }}>
+              {tabs.map((tab) => {
+                const isActive = tab.id === activeTabId;
+                return (
+                  <TabsTrigger
+                    key={tab.id} value={tab.id}
+                    className="[&::after]:hidden!"
+                    style={{
+                      height: 32, gap: 8, paddingInline: 12,
+                      borderRadius: '4px 4px 0 0',
+                      border: `1px solid ${isActive ? PM.border : 'transparent'}`,
+                      borderBottom: `1px solid ${isActive ? PM.bgContent : 'transparent'}`,
+                      background: isActive ? PM.bgContent : 'transparent',
+                      marginBottom: isActive ? -1 : 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 11, fontWeight: 700, color: methodColor(tab.method) }}>{tab.method}</span>
+                    <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab.name}</span>
+                    <span
+                      onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
+                      style={{ color: '#555', fontSize: 15, lineHeight: 1, marginLeft: 2 }}
+                    >×</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </Tabs>
 
           {/* Breadcrumb + actions */}
           <div style={{
