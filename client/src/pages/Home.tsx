@@ -310,23 +310,11 @@ export default function Home() {
               justifyContent: 'space-between', padding: '8px 16px',
               borderBottom: `1px solid ${PM.border}`
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div>
                 <span style={{ fontSize: 14, fontWeight: 600, color: PM.text }}>Response</span>
                 <StatusBar />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button style={{
-                  fontSize: 12, color: PM.muted, background: 'none',
-                  border: 'none', cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', gap: 4
-                }}>
-                  ↺ History <span style={{ fontSize: 9 }}>▾</span>
-                </button>
-                <button style={{
-                  color: '#555', background: 'none', border: 'none',
-                  cursor: 'pointer', fontSize: 16, lineHeight: 1
-                }}>⋯</button>
-              </div>
+
             </div>
 
             {!response ? (
@@ -335,19 +323,7 @@ export default function Home() {
                 alignItems: 'center', justifyContent: 'center',
                 padding: '48px 16px', gap: 18, color: '#505050'
               }}>
-                {[
-                  { icon: '↺', text: 'Send + Get a successful response' },
-                  { icon: '⊞', text: 'Send + Visualize response' },
-                  { icon: '✓', text: 'Send + Write tests' },
-                ].map(({ icon, text }) => (
-                  <div key={text} style={{
-                    display: 'flex', alignItems: 'center',
-                    gap: 10, fontSize: 13
-                  }}>
-                    <span>{icon}</span>
-                    <span>{text}</span>
-                  </div>
-                ))}
+                Response here
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>

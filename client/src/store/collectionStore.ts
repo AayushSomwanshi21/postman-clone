@@ -17,6 +17,7 @@ interface CollectionState {
   toggleExpand: (id: string) => Promise<void>;
   addRequest: (collectionId: string, request: SavedRequest) => void;
   updateRequest: (collectionId: string, request: SavedRequest) => void;
+  removeRequest: (collectionId: string, requestId: string) => void;
   setActiveRequestId: (id: string) => void;
   setCreating: (val: boolean) => void;
 }
@@ -76,6 +77,12 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     requestsByCollection: {
       ...s.requestsByCollection,
       [collectionId]: (s.requestsByCollection[collectionId] ?? []).map((r) => r.id === request.id ? request : r),
+    },
+  })),
+  removeRequest: (collectionId, requestId) => set((s) => ({
+    requestsByCollection: {
+      ...s.requestsByCollection,
+      [collectionId]: (s.requestsByCollection[collectionId] ?? []).filter((r) => r.id !== requestId),
     },
   })),
   addRequest: (collectionId, request) => set((s) => ({

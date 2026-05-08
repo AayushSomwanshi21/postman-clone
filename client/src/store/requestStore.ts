@@ -29,6 +29,7 @@ interface RequestState {
   loadRequest: (request: SavedRequest) => void;
   createRequest: (collectionId: string, name: string) => Promise<void>;
   updateRequest: (collectionId: string, requestId: string) => Promise<void>;
+  deleteRequest: (collectionId: string, requestId: string) => Promise<void>;
 }
 
 export const useRequestStore = create<RequestState>((set) => ({
@@ -87,5 +88,10 @@ export const useRequestStore = create<RequestState>((set) => ({
     const payload = { method, url, params: toRecord(params), headers: toRecord(headers), body: { content: body } };
     const { data } = await api.put<SavedRequest>(`/collections/${collectionId}/requests/${requestId}`, payload);
     useCollectionStore.getState().updateRequest(collectionId, data);
+  },
+  deleteRequest: async (collectionId, requestId) => {
+    await api.delete(`/collections/${collectionId}/requests/${requestId}`);
+    useCollectionStore.getState().removeRequest(collectionId, requestId);
+    useTabStore.getState().closeTab(requestId);
   },
 }));
