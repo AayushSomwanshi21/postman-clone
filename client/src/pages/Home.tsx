@@ -56,9 +56,8 @@ export default function Home() {
     }
   }
 
-  function handleTabClick(tabId: string) {
-    setActiveTab(tabId);
-    const request = Object.values(requestsByCollection).flat().find((r) => r.id === tabId);
+  useEffect(() => {
+    const request = Object.values(requestsByCollection).flat().find((r) => r.id === activeTabId);
     if (request) {
       useRequestStore.getState().loadRequest(request);
     } else {
@@ -68,7 +67,7 @@ export default function Home() {
         params: [{ key: '', value: '', enabled: true }],
       });
     }
-  }
+  }, [activeTabId]);
 
   const reqTabs: { id: RequestTab; label: string; count?: number }[] = [
     { id: 'params', label: 'Params', count: paramCount },
@@ -206,7 +205,7 @@ export default function Home() {
         }}>
 
           {/* ── TAB BAR ── */}
-          <Tabs value={activeTabId} onValueChange={handleTabClick} style={{ flexShrink: 0 }}>
+          <Tabs value={activeTabId} onValueChange={setActiveTab} style={{ flexShrink: 0 }}>
             <TabsList variant="line" style={{
               height: 36, borderRadius: 0, justifyContent: 'flex-start', alignItems: 'flex-end',
               background: PM.bgPanel, borderBottom: `1px solid ${PM.border}`, padding: '0 4px', gap: 2,
