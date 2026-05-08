@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import UrlBar from '@/components/RequestBuilder/UrlBar';
 import ParamsTab from '@/components/RequestBuilder/ParamsTab';
 import HeadersTab from '@/components/RequestBuilder/HeadersTab';
@@ -28,14 +29,32 @@ export default function Home() {
   const { response, headers, params } = useRequestStore();
   const { activeWorkspace, fetchWorkspaces } = useWorkspaceStore();
   const { tabs, activeTabId, closeTab, setActiveTab } = useTabStore();
-  const { requestsByCollection } = useCollectionStore();
+  const { requestsByCollection, activeRequestId } = useCollectionStore();
   const [activeReqTab, setActiveReqTab] = useState<RequestTab>('params');
   const [activeResTab, setActiveResTab] = useState<ResponseTab>('body');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { fetchWorkspaces(); }, []);
 
   const headerCount = headers.filter((h) => h.enabled && h.key).length;
   const paramCount = params.filter((p) => p.enabled && p.key).length;
+
+  async function handleSave() {
+    if (!activeRequestId || saving) return;
+    const collectionId = Object.entries(requestsByCollection).find(([, reqs]) =>
+      reqs.some((r) => r.id === activeRequestId)
+    )?.[0];
+    if (!collectionId) return;
+    setSaving(true);
+    try {
+      await useRequestStore.getState().updateRequest(collectionId, activeRequestId);
+      toast.success('Request updated successfully', { style: { color: '#4ade80' } });
+    } catch {
+      toast.error('Failed to save request');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function handleTabClick(tabId: string) {
     setActiveTab(tabId);
@@ -226,19 +245,20 @@ export default function Home() {
             borderBottom: `1px solid ${PM.border}`, flexShrink: 0
           }}>
             <span style={{ fontSize: 13, color: PM.muted }}>New Request</span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['Save', 'Share ↗'].map((label) => (
-                <button key={label}
-                  style={{
-                    fontSize: 13, color: PM.text, background: 'none',
-                    border: `1px solid ${PM.border}`, borderRadius: 4,
-                    padding: '3px 12px', cursor: 'pointer', transition: 'background 0.15s'
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
-                  {label}
-                </button>
-              ))}
+            <div>
+              <button
+                onClick={handleSave}
+                disabled={!activeRequestId || saving}
+                style={{
+                  fontSize: 13, color: PM.text, background: 'none',
+                  border: `1px solid ${PM.border}`, borderRadius: 4,
+                  padding: '3px 12px', cursor: (activeRequestId && !saving) ? 'pointer' : 'not-allowed',
+                  opacity: (activeRequestId && !saving) ? 1 : 0.4, transition: 'background 0.15s'
+                }}
+                onMouseEnter={(e) => { if (activeRequestId && !saving) e.currentTarget.style.background = PM.bgHover; }}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
+                {saving ? 'Saving...' : 'Save'}
+              </button>
             </div>
           </div>
 

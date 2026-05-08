@@ -1,3 +1,10 @@
+export interface Response {
+  status_code: number;
+  headers: Record<string, string>;
+  body: string;
+  elapsed_ms: number;
+}
+
 export interface Workspace {
   id: string;
   owner_id: string;
