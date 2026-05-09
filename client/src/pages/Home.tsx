@@ -243,7 +243,9 @@ export default function Home() {
             justifyContent: 'space-between', padding: '6px 16px',
             borderBottom: `1px solid ${PM.border}`, flexShrink: 0
           }}>
-            <span style={{ fontSize: 13, color: PM.muted }}>New Request</span>
+            <span style={{ fontSize: 13, color: PM.text }}>
+              {tabs.find((t) => t.id === activeTabId)?.name ?? 'New Request'}
+            </span>
             <div>
               <button
                 onClick={handleSave}
