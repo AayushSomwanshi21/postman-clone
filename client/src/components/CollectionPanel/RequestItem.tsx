@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { Trash2, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Spinner } from '@/components/ui/spinner';
+import { ActionDialog } from '@/components/ui/action-dialog';
 import { useCollectionStore } from '@/store/collectionStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useTabStore } from '@/store/tabStore';
@@ -27,24 +22,10 @@ export default function RequestItem({ request }: Props) {
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   function handleClick() {
     openTab({ id: request.id, name: request.name, method: request.method });
     loadRequest(request);
-  }
-
-  async function handleConfirmDelete() {
-    setDeleting(true);
-    try {
-      await deleteRequest(request.collection_id, request.id);
-      toast.success('Request deleted', { style: { color: '#4ade80' } });
-    } catch {
-      toast.error('Failed to delete request');
-    } finally {
-      setDeleting(false);
-      setAlertOpen(false);
-    }
   }
 
   return (
@@ -106,27 +87,21 @@ export default function RequestItem({ request }: Props) {
         )}
       </div>
 
-      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
-        <AlertDialogContent size="sm" className="bg-[#1c1b1b] border-[#3a3a3a]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Request</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this request?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting} style={{ borderRadius: 6 }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); handleConfirmDelete(); }}
-              disabled={deleting}
-              style={{ background: '#e74c3c', display: 'flex', alignItems: 'center', gap: 6, borderRadius: 6 }}
-            >
-              {deleting && <Spinner style={{ width: 14, height: 14 }} />}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionDialog
+        open={alertOpen}
+        onOpenChange={setAlertOpen}
+        mode="delete"
+        title="Delete Request"
+        description="Are you sure you want to delete this request?"
+        onConfirm={async () => {
+          try {
+            await deleteRequest(request.collection_id, request.id);
+            toast.success('Request deleted', { style: { color: '#4ade80' } });
+          } catch {
+            toast.error('Failed to delete request');
+          }
+        }}
+      />
     </>
   );
 }

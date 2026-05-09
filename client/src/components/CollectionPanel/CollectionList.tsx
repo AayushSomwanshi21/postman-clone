@@ -6,17 +6,7 @@ import { useRequestStore } from '@/store/requestStore';
 import { useWorkspaceStore } from '@/store/workspaceStore';
 import RequestItem from './RequestItem';
 import { PM } from '@/lib/constants';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
+import { ActionDialog } from '@/components/ui/action-dialog';
 import { toast } from 'sonner';
 
 export default function CollectionList() {
@@ -27,22 +17,6 @@ export default function CollectionList() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [dialogCollectionId, setDialogCollectionId] = useState<string | null>(null);
-  const [requestName, setRequestName] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  async function handleSave() {
-    if (!dialogCollectionId || saving) return;
-    setSaving(true);
-    try {
-      await createRequest(dialogCollectionId, requestName.trim() || 'New Request');
-      toast.success('Request created', { style: { color: '#4ade80' } });
-    } catch {
-      toast.error('Failed to create request');
-    } finally {
-      setSaving(false);
-      setDialogCollectionId(null);
-    }
-  }
 
   async function handleCreate() {
     const name = inputRef.current?.value.trim();
@@ -59,11 +33,11 @@ export default function CollectionList() {
         </span>
         <button
           onClick={() => setCreating(true)}
-          style={{ color: '#666', background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 2px' }}
+          style={{ color: '#666', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}
           onMouseEnter={(e) => (e.currentTarget.style.color = PM.text)}
           onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
         >
-          +
+          <Plus size={16} />
         </button>
       </div>
 
@@ -98,33 +72,22 @@ export default function CollectionList() {
         </div>
       )}
 
-      <AlertDialog open={dialogCollectionId !== null} onOpenChange={(open) => { if (!open) setDialogCollectionId(null); }}>
-        <AlertDialogContent className="bg-[#1c1b1b] border-[#3a3a3a]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>New Request</AlertDialogTitle>
-            <AlertDialogDescription>Enter a name for the request.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <Input
-            autoFocus
-            placeholder="Request name"
-            value={requestName}
-            disabled={saving}
-            onChange={(e) => setRequestName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving} style={{ borderRadius: 6 }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); handleSave(); }}
-              disabled={saving}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 6, background: PM.accent }}
-            >
-              {saving && <Spinner style={{ width: 14, height: 14 }} />}
-              Save
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionDialog
+        open={dialogCollectionId !== null}
+        onOpenChange={(open) => { if (!open) setDialogCollectionId(null); }}
+        mode="create"
+        title="New Request"
+        description="Enter a name for the request."
+        placeholder="Request name"
+        onConfirm={async (name) => {
+          try {
+            await createRequest(dialogCollectionId!, name || 'New Request');
+            toast.success('Request created', { style: { color: '#4ade80' } });
+          } catch {
+            toast.error('Failed to create request');
+          }
+        }}
+      />
 
       {collections.map((col) => (
         <div key={col.id}>
@@ -148,7 +111,7 @@ export default function CollectionList() {
               <Plus
                 size={13}
                 color={PM.muted}
-                onClick={(e) => { e.stopPropagation(); setRequestName(''); setDialogCollectionId(col.id); }}
+                onClick={(e) => { e.stopPropagation(); setDialogCollectionId(col.id); }}
                 style={{ flexShrink: 0, cursor: 'pointer' }}
               />
             )}
