@@ -6,6 +6,18 @@ import { useRequestStore } from '@/store/requestStore';
 import { useWorkspaceStore } from '@/store/workspaceStore';
 import RequestItem from './RequestItem';
 import { PM } from '@/lib/constants';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 export default function CollectionList() {
   const { collections, expandedIds, requestsByCollection, toggleExpand, createCollection, creating, setCreating, loading, loadingRequestIds } =
@@ -14,6 +26,23 @@ export default function CollectionList() {
   const activeWorkspace = useWorkspaceStore((s) => s.activeWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [dialogCollectionId, setDialogCollectionId] = useState<string | null>(null);
+  const [requestName, setRequestName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!dialogCollectionId || saving) return;
+    setSaving(true);
+    try {
+      await createRequest(dialogCollectionId, requestName.trim() || 'New Request');
+      toast.success('Request created', { style: { color: '#4ade80' } });
+    } catch {
+      toast.error('Failed to create request');
+    } finally {
+      setSaving(false);
+      setDialogCollectionId(null);
+    }
+  }
 
   async function handleCreate() {
     const name = inputRef.current?.value.trim();
@@ -69,6 +98,34 @@ export default function CollectionList() {
         </div>
       )}
 
+      <AlertDialog open={dialogCollectionId !== null} onOpenChange={(open) => { if (!open) setDialogCollectionId(null); }}>
+        <AlertDialogContent className="bg-[#1c1b1b] border-[#3a3a3a]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>New Request</AlertDialogTitle>
+            <AlertDialogDescription>Enter a name for the request.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            autoFocus
+            placeholder="Request name"
+            value={requestName}
+            disabled={saving}
+            onChange={(e) => setRequestName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving} style={{ borderRadius: 6 }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleSave(); }}
+              disabled={saving}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 6, background: PM.accent }}
+            >
+              {saving && <Spinner style={{ width: 14, height: 14 }} />}
+              Save
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {collections.map((col) => (
         <div key={col.id}>
           <div
@@ -91,8 +148,8 @@ export default function CollectionList() {
               <Plus
                 size={13}
                 color={PM.muted}
-                onClick={(e) => { e.stopPropagation(); createRequest(col.id, 'New Request'); }}
-                style={{ flexShrink: 0 }}
+                onClick={(e) => { e.stopPropagation(); setRequestName(''); setDialogCollectionId(col.id); }}
+                style={{ flexShrink: 0, cursor: 'pointer' }}
               />
             )}
           </div>
