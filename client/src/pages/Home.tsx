@@ -100,7 +100,7 @@ export default function Home() {
           <span style={{ color: PM.muted, fontSize: 9 }}>▾</span>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        {/* <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
             background: PM.bgInput, border: `1px solid ${PM.border}`,
@@ -108,7 +108,7 @@ export default function Home() {
           }}>
             <span style={{ color: '#555', fontSize: 13 }}>Search</span>
           </div>
-        </div>
+        </div> */}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
           <div style={{

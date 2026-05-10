@@ -4,6 +4,7 @@ from app.routes.auth import router as auth_router
 from app.routes.proxy import router as proxy_router
 from app.routes.collections import router as collections_router
 from app.routes.workspaces import router as workspaces_router
+from app.routes.environments import router as environments_router
 
 app = FastAPI(title="Postman Clone API")
 
@@ -19,6 +20,7 @@ app.include_router(auth_router)
 app.include_router(proxy_router)
 app.include_router(workspaces_router)
 app.include_router(collections_router)
+app.include_router(environments_router)
 
 
 @app.get("/health")

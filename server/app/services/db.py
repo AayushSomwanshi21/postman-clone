@@ -6,6 +6,7 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.collection import Collection
 from app.models.workspace import Workspace
+from app.models.environment import Environment
 
 
 def get_workspace(
@@ -35,3 +36,19 @@ def get_collection(
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found")
     return collection
+
+
+def get_environment(
+    environment_id: UUID,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+) -> Environment:
+    environment = (
+        db.query(Environment)
+        .join(Workspace, Environment.workspace_id == Workspace.id)
+        .filter(Environment.id == environment_id, Workspace.owner_id == user_id)
+        .first()
+    )
+    if not environment:
+        raise HTTPException(status_code=404, detail="Environment not found")
+    return environment
