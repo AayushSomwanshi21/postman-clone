@@ -16,6 +16,7 @@ import { useCollectionStore } from '@/store/collectionStore';
 import CollectionList from '@/components/CollectionPanel/CollectionList';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PM, METHOD_HEX } from '@/lib/constants';
+import { LayoutList, Files, Layers } from 'lucide-react';
 
 function methodColor(m: string) {
   return METHOD_HEX[m] ?? PM.muted;
@@ -105,7 +106,6 @@ export default function Home() {
             background: PM.bgInput, border: `1px solid ${PM.border}`,
             borderRadius: 4, padding: '3px 10px', width: '100%', maxWidth: 380
           }}>
-            <span style={{ color: PM.muted, fontSize: 13 }}>🔍</span>
             <span style={{ color: '#555', fontSize: 13 }}>Search</span>
           </div>
         </div>
@@ -139,15 +139,16 @@ export default function Home() {
           padding: '10px 0', gap: 6, flexShrink: 0
         }}>
           {[
-            { icon: '≡', title: 'Collections' },
-            { icon: '↺', title: 'History' },
+            { icon: <LayoutList size={18} />, title: 'Collections' },
+            { icon: <Files size={18} />, title: 'Documents' },
+            { icon: <Layers size={18} />, title: 'Environments' },
           ].map(({ icon, title }) => (
             <button key={title} title={title}
               style={{
                 width: 32, height: 32, display: 'flex', alignItems: 'center',
                 justifyContent: 'center', background: 'none', border: 'none',
                 cursor: 'pointer', borderRadius: 4, color: PM.muted,
-                fontSize: 16, transition: 'background 0.15s'
+                transition: 'background 0.15s'
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
@@ -169,7 +170,6 @@ export default function Home() {
               background: PM.bgInput, border: `1px solid ${PM.border}`,
               borderRadius: 4, padding: '4px 8px'
             }}>
-              <span style={{ color: '#555', fontSize: 12 }}>🔍</span>
               <input placeholder="Search" style={{
                 background: 'transparent', border: 'none',
                 outline: 'none', fontSize: 13, color: PM.muted, width: '100%'
@@ -181,21 +181,6 @@ export default function Home() {
             <CollectionList />
           </div>
 
-          <div style={{ borderTop: `1px solid ${PM.border}` }}>
-            {['ENVIRONMENTS', 'SPECS', 'FLOWS'].map((section) => (
-              <div key={section}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 12px', fontSize: 11, fontWeight: 600,
-                  color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em',
-                  cursor: 'pointer', transition: 'background 0.15s'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-                <span style={{ fontSize: 10 }}>›</span>{section}
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* ── MAIN CONTENT ──── */}
