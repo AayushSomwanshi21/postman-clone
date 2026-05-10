@@ -144,4 +144,17 @@
   .kv-cell-input {
     @apply w-full bg-transparent border-none outline-none px-2 py-1.5 text-sm font-mono text-[#d4d4d4] placeholder-[#4a4a4a];
   }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: #d4d4d4;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
 }

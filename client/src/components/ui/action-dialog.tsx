@@ -14,14 +14,15 @@ interface ActionDialogProps {
   title: string;
   description?: string;
   placeholder?: string;
+  initialValue?: string;
   onConfirm: (name?: string) => Promise<void>;
 }
 
-export function ActionDialog({ open, onOpenChange, mode, title, description, placeholder, onConfirm }: ActionDialogProps) {
+export function ActionDialog({ open, onOpenChange, mode, title, description, placeholder, initialValue, onConfirm }: ActionDialogProps) {
   const [saving, setSaving] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-  useEffect(() => { if (!open) setInputValue(''); }, [open]);
+  useEffect(() => { setInputValue(open ? (initialValue ?? '') : ''); }, [open]);
 
   async function handleConfirm() {
     if (saving) return;

@@ -14,6 +14,7 @@ interface CollectionState {
   fetchCollections: (workspaceId: string) => Promise<void>;
   createCollection: (workspaceId: string, name: string) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
+  updateCollection: (id: string, name: string) => Promise<void>;
   toggleExpand: (id: string) => Promise<void>;
   addRequest: (collectionId: string, request: SavedRequest) => void;
   updateRequest: (collectionId: string, request: SavedRequest) => void;
@@ -47,6 +48,11 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   deleteCollection: async (id) => {
     await api.delete(`/collections/${id}`);
     set((s) => ({ collections: s.collections.filter((c) => c.id !== id) }));
+  },
+
+  updateCollection: async (id, name) => {
+    const { data } = await api.put<Collection>(`/collections/${id}`, { name });
+    set((s) => ({ collections: s.collections.map((c) => c.id === id ? data : c) }));
   },
 
   toggleExpand: async (id) => {

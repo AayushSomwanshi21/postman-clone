@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ChevronRight, Plus } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useCollectionStore } from '@/store/collectionStore';
 import { useRequestStore } from '@/store/requestStore';
@@ -10,18 +10,28 @@ import { ActionDialog } from '@/components/ui/action-dialog';
 import { toast } from 'sonner';
 
 export default function CollectionList() {
-  const { collections, expandedIds, requestsByCollection, toggleExpand, createCollection, creating, setCreating, loading, loadingRequestIds } =
+  const { collections, expandedIds, requestsByCollection, toggleExpand, createCollection, updateCollection, deleteCollection, creating, setCreating, loading, loadingRequestIds } =
     useCollectionStore();
   const { createRequest } = useRequestStore();
   const activeWorkspace = useWorkspaceStore((s) => s.activeWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [dialogCollectionId, setDialogCollectionId] = useState<string | null>(null);
+  const [renameCollectionId, setRenameCollectionId] = useState<string | null>(null);
+  const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
+
+  const renameCollection = collections.find((c) => c.id === renameCollectionId);
 
   async function handleCreate() {
     const name = inputRef.current?.value.trim();
     if (!name || !activeWorkspace) return;
-    await createCollection(activeWorkspace.id, name);
+    try {
+      await createCollection(activeWorkspace.id, name);
+      toast.success('Collection created', { style: { color: '#4ade80' } });
+    } catch {
+      toast.error('Failed to create collection');
+    }
     setCreating(false);
   }
 
@@ -32,7 +42,7 @@ export default function CollectionList() {
           Collections
         </span>
         <button
-          onClick={() => setCreating(true)}
+          onClick={() => creating ? handleCreate() : setCreating(true)}
           style={{ color: '#666', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}
           onMouseEnter={(e) => (e.currentTarget.style.color = PM.text)}
           onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
@@ -89,40 +99,121 @@ export default function CollectionList() {
         }}
       />
 
+      <ActionDialog
+        open={deleteCollectionId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteCollectionId(null); }}
+        mode="delete"
+        title="Delete Collection"
+        description="Are you sure? This will permanently delete the collection and all its requests."
+        onConfirm={async () => {
+          try {
+            await deleteCollection(deleteCollectionId!);
+            toast.success('Collection deleted', { style: { color: '#4ade80' } });
+          } catch {
+            toast.error('Failed to delete collection');
+          }
+        }}
+      />
+
+      <ActionDialog
+        open={renameCollectionId !== null}
+        onOpenChange={(open) => { if (!open) setRenameCollectionId(null); }}
+        mode="create"
+        title="Rename Collection"
+        description="Enter a new name for the collection."
+        placeholder="Collection name"
+        initialValue={renameCollection?.name}
+        onConfirm={async (name) => {
+          if (!name) return;
+          try {
+            await updateCollection(renameCollectionId!, name);
+            toast.success('Collection renamed', { style: { color: '#4ade80' } });
+          } catch {
+            toast.error('Failed to rename collection');
+          }
+        }}
+      />
+
       {collections.map((col) => (
         <div key={col.id}>
           <div
-            onClick={() => toggleExpand(col.id)}
             onMouseEnter={() => setHoveredId(col.id)}
-            onMouseLeave={() => setHoveredId(null)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 4px', cursor: 'pointer', borderRadius: 4, fontSize: 13, color: PM.text, userSelect: 'none', background: hoveredId === col.id ? PM.bgHover : 'transparent' }}
+            onMouseLeave={() => { setHoveredId(null); setMenuOpenId(null); }}
+            style={{ position: 'relative' }}
           >
-            <ChevronRight
-              size={13}
-              color={PM.muted}
-              style={{
-                flexShrink: 0,
-                transform: expandedIds.has(col.id) ? 'rotate(90deg)' : 'rotate(0deg)',
-                transition: 'transform 0.15s',
-              }}
-            />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{col.name}</span>
-            {hoveredId === col.id && (
-              <Plus
+            <div
+              onClick={() => toggleExpand(col.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 4px', cursor: 'pointer', borderRadius: 4, fontSize: 13, color: PM.text, userSelect: 'none', background: hoveredId === col.id ? PM.bgHover : 'transparent' }}
+            >
+              <ChevronRight
                 size={13}
                 color={PM.muted}
-                onClick={(e) => { e.stopPropagation(); setDialogCollectionId(col.id); }}
-                style={{ flexShrink: 0, cursor: 'pointer' }}
+                style={{
+                  flexShrink: 0,
+                  transform: expandedIds.has(col.id) ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.15s',
+                }}
               />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{col.name}</span>
+              {hoveredId === col.id && (
+                <MoreHorizontal
+                  size={13}
+                  color={PM.muted}
+                  onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === col.id ? null : col.id); }}
+                  style={{ flexShrink: 0, cursor: 'pointer' }}
+                />
+              )}
+            </div>
+
+            {menuOpenId === col.id && (
+              <div
+                style={{
+                  position: 'absolute', right: 4, top: '100%', zIndex: 100,
+                  background: PM.bgPanel, border: `1px solid ${PM.border}`,
+                  borderRadius: 6, padding: 4, minWidth: 130,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                }}
+              >
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); setDialogCollectionId(col.id); }}
+                  className="menu-item"
+                  onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Plus size={13} />
+                  Add Request
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); setRenameCollectionId(col.id); }}
+                  className="menu-item"
+                  onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Pencil size={13} />
+                  Rename
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); setDeleteCollectionId(col.id); }}
+                  className="menu-item"
+                  style={{ color: '#e74c3c' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Trash2 size={13} />
+                  Delete
+                </button>
+              </div>
             )}
           </div>
 
           {expandedIds.has(col.id) && (
             loadingRequestIds.has(col.id)
               ? <div style={{ padding: '4px 4px 4px 22px' }}><Spinner /></div>
-              : (requestsByCollection[col.id] ?? []).map((req) => (
-                <RequestItem key={req.id} request={req} />
-              ))
+              : (requestsByCollection[col.id] ?? []).length === 0
+                ? <div style={{ padding: '4px 4px 4px 24px', fontSize: 12, color: '#666666' }}>No requests yet.</div>
+                : (requestsByCollection[col.id] ?? []).map((req) => (
+                  <RequestItem key={req.id} request={req} />
+                ))
           )}
         </div>
       ))}
