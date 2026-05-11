@@ -58,3 +58,6 @@ export interface EnvVariable {
   value: string;
   is_secret: boolean;
 }
+
+export type RequestTab = 'params' | 'headers' | 'body' | 'auth';
+export type ResponseTab = 'body' | 'headers';
