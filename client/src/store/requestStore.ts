@@ -1,14 +1,8 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
-import type { SavedRequest, Response } from '@/lib/types';
+import type { SavedRequest, Response, KeyValueRow } from '@/lib/types';
 import { useCollectionStore } from '@/store/collectionStore';
 import { useTabStore } from '@/store/tabStore';
-
-export interface KeyValueRow {
-  key: string;
-  value: string;
-  enabled: boolean;
-}
 
 interface RequestState {
   name: string | null;

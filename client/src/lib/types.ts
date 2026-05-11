@@ -1,3 +1,9 @@
+export interface KeyValueRow {
+  key: string;
+  value: string;
+  enabled: boolean;
+}
+
 export interface Response {
   status_code: number;
   headers: Record<string, string>;
@@ -35,4 +41,20 @@ export interface SavedRequest {
   position: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface Environment {
+  id: string;
+  workspace_id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface EnvVariable {
+  id: string;
+  env_id: string;
+  key: string;
+  value: string;
+  is_secret: boolean;
 }

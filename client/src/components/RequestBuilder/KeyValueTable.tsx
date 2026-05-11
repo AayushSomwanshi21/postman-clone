@@ -1,4 +1,4 @@
-import type { KeyValueRow } from '@/store/requestStore';
+import type { KeyValueRow } from '@/lib/types';
 
 interface Props {
   rows: KeyValueRow[];
