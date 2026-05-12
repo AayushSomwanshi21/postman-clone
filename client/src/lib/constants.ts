@@ -1,3 +1,11 @@
+import { LayoutList, Files, Layers } from 'lucide-react';
+
+export const SIDEBAR_NAV = [
+  { Icon: LayoutList, title: 'Collections', to: '/collections' },
+  { Icon: Files, title: 'Documents', to: '/documents' },
+  { Icon: Layers, title: 'Environments', to: '/environments' },
+];
+
 export const PM = {
   bgApp: '#1e1e1e',
   bgTopBar: '#191919',

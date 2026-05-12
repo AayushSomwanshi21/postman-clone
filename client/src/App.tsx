@@ -9,8 +9,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/auth" element={!token ? <Auth /> : <Navigate to="/" />} />
-        <Route path="/" element={token ? <Home /> : <Navigate to="/auth" />} />
+        <Route path="/auth" element={!token ? <Auth /> : <Navigate to="/collections" />} />
+        <Route path="/*" element={token ? <Home /> : <Navigate to="/auth" />} />
       </Routes>
       <Toaster position="bottom-right" theme="dark" />
     </BrowserRouter>

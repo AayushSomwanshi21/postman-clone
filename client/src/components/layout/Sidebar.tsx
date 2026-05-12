@@ -1,5 +1,5 @@
-import { LayoutList, Files, Layers } from 'lucide-react';
-import { PM } from '@/lib/constants';
+import { NavLink } from 'react-router-dom';
+import { PM, SIDEBAR_NAV } from '@/lib/constants';
 
 export default function Sidebar() {
   return (
@@ -9,22 +9,21 @@ export default function Sidebar() {
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: '10px 0', gap: 6, flexShrink: 0
     }}>
-      {[
-        { icon: <LayoutList size={18} />, title: 'Collections' },
-        { icon: <Files size={18} />, title: 'Documents' },
-        { icon: <Layers size={18} />, title: 'Environments' },
-      ].map(({ icon, title }) => (
-        <button key={title} title={title}
-          style={{
-            width: 32, height: 32, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', background: 'none', border: 'none',
-            cursor: 'pointer', borderRadius: 4, color: PM.muted,
-            transition: 'background 0.15s'
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
-          {icon}
-        </button>
+      {SIDEBAR_NAV.map(({ Icon, title, to }) => (
+        <NavLink key={title} to={to} title={title} style={{ textDecoration: 'none' }}>
+          {({ isActive }) => (
+            <div style={{
+              width: 32, height: 32, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', borderRadius: 4,
+              cursor: 'pointer', transition: 'background 0.15s',
+              background: isActive ? PM.bgHover : 'none',
+              color: isActive ? PM.text : PM.muted,
+              borderLeft: isActive ? `2px solid ${PM.accent}` : '2px solid transparent',
+            }}>
+              <Icon size={18} />
+            </div>
+          )}
+        </NavLink>
       ))}
     </div>
   );
