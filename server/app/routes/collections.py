@@ -117,6 +117,7 @@ def create_request(
         url=data.url,
         headers=data.headers,
         params=data.params,
+        path_vars=data.path_vars,
         body=data.body,
         auth=data.auth,
         description=data.description,

@@ -9,6 +9,7 @@ interface RequestState {
   method: string;
   url: string;
   params: KeyValueRow[];
+  pathVars: KeyValueRow[];
   headers: KeyValueRow[];
   body: string;
   response: Response | null;
@@ -16,6 +17,7 @@ interface RequestState {
   setMethod: (method: string) => void;
   setUrl: (url: string) => void;
   setParams: (params: KeyValueRow[]) => void;
+  setPathVars: (pathVars: KeyValueRow[]) => void;
   setHeaders: (headers: KeyValueRow[]) => void;
   setBody: (body: string) => void;
   setResponse: (response: Response | null) => void;
@@ -31,13 +33,22 @@ export const useRequestStore = create<RequestState>((set) => ({
   method: 'GET',
   url: '',
   params: [{ key: '', value: '', enabled: true }],
+  pathVars: [],
   headers: [{ key: '', value: '', enabled: true }],
   body: '',
   response: null,
   loading: false,
   setMethod: (method) => { set({ method }); useTabStore.getState().updateActiveTab({ method }); },
-  setUrl: (url) => set({ url }),
+  setUrl: (url) => {
+    const names = [...url.matchAll(/[:{](\w+)}?/g)].map((m) => m[1]);
+    set((s) => {
+      const existing = Object.fromEntries(s.pathVars.filter((r) => r.key).map((r) => [r.key, r.value]));
+      const pathVars = names.map((key) => ({ key, value: existing[key] ?? '', enabled: true }));
+      return { url, pathVars };
+    });
+  },
   setParams: (params) => set({ params }),
+  setPathVars: (pathVars) => set({ pathVars }),
   setHeaders: (headers) => set({ headers }),
   setBody: (body) => set({ body }),
   setResponse: (response) => {
@@ -64,6 +75,7 @@ export const useRequestStore = create<RequestState>((set) => ({
         ...Object.entries(request.params ?? {}).map(([key, value]) => ({ key, value, enabled: true })),
         { key: '', value: '', enabled: true },
       ],
+      pathVars: Object.entries(request.path_vars ?? {}).map(([key, value]) => ({ key, value, enabled: true })),
     });
   },
   createRequest: async (collectionId, name) => {
@@ -75,11 +87,11 @@ export const useRequestStore = create<RequestState>((set) => ({
     useRequestStore.getState().loadRequest(data);
   },
   updateRequest: async (collectionId, requestId) => {
-    const { method, url, params, headers, body } = useRequestStore.getState();
+    const { method, url, params, pathVars, headers, body } = useRequestStore.getState();
     const toRecord = (rows: KeyValueRow[]) =>
       Object.fromEntries(rows.filter((r) => r.enabled && r.key).map((r) => [r.key, r.value]));
 
-    const payload = { method, url, params: toRecord(params), headers: toRecord(headers), body: { content: body } };
+    const payload = { method, url, params: toRecord(params), path_vars: toRecord(pathVars), headers: toRecord(headers), body: { content: body } };
     const { data } = await api.put<SavedRequest>(`/collections/${collectionId}/requests/${requestId}`, payload);
     useCollectionStore.getState().updateRequest(collectionId, data);
   },

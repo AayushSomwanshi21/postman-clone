@@ -7,7 +7,7 @@ import EnvEditor from '@/components/EnvironmentManager/EnvEditor';
 
 export default function Environments() {
   const activeWorkspace = useWorkspaceStore((s) => s.activeWorkspace);
-  const activeEnvironmentId = useEnvStore((s) => s.activeEnvironmentId);
+  const activeEnvironmentId = useEnvStore((s) => s.environments.find((e) => e.is_active)?.id ?? null);
   const [selectedEnvId, setSelectedEnvId] = useState<string | null>(null);
 
   useEffect(() => {

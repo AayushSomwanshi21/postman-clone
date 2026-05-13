@@ -4,7 +4,6 @@ import type { Environment, EnvVariable } from '@/lib/types';
 
 interface EnvState {
     environments: Environment[];
-    activeEnvironmentId: string | null;
     variablesByEnv: Record<string, EnvVariable[]>;
     loading: boolean;
 
@@ -12,7 +11,8 @@ interface EnvState {
     createEnvironment: (workspaceId: string, name: string) => Promise<void>;
     updateEnvironment: (id: string, name: string) => Promise<void>;
     deleteEnvironment: (id: string) => Promise<void>;
-    activateEnvironment: (id: string) => Promise<void>;
+    activateEnvironment: (id: string) => void;
+    deactivateAll: () => void;
 
     fetchVariables: (envId: string) => Promise<void>;
     createVariable: (envId: string, key: string, value: string) => Promise<void>;
@@ -24,16 +24,16 @@ interface EnvState {
 
 export const useEnvStore = create<EnvState>((set, get) => ({
     environments: [],
-    activeEnvironmentId: null,
     variablesByEnv: {},
     loading: false,
 
     fetchEnvironments: async (workspaceId) => {
         set({ loading: true });
         const { data } = await api.get<Environment[]>('/environments', { params: { workspace_id: workspaceId } });
-        const active = data.find((e) => e.is_active) ?? null;
-        set({ environments: data, activeEnvironmentId: active?.id ?? null, loading: false });
-        if (active) await get().fetchVariables(active.id);
+        set({ environments: data, loading: false });
+        const active = data.find((e) => e.is_active);
+        if (active) get().fetchVariables(active.id);
+        data.forEach((e) => { if (!e.is_active) get().fetchVariables(e.id); });
     },
 
     createEnvironment: async (workspaceId, name) => {
@@ -54,21 +54,23 @@ export const useEnvStore = create<EnvState>((set, get) => ({
             const { [id]: _, ...rest } = s.variablesByEnv;
             return {
                 environments: s.environments.filter((e) => e.id !== id),
-                activeEnvironmentId: s.activeEnvironmentId === id ? null : s.activeEnvironmentId,
                 variablesByEnv: rest,
             };
         });
     },
 
-    activateEnvironment: async (id) => {
-        const { data } = await api.post<Environment>(`/environments/${id}/activate`);
+    activateEnvironment: (id) => {
         set((s) => ({
-            environments: s.environments.map((e) =>
-                e.id === id ? data : { ...e, is_active: false }
-            ),
-            activeEnvironmentId: id,
+            environments: s.environments.map((e) => ({ ...e, is_active: e.id === id })),
         }));
-        await get().fetchVariables(id);
+        get().fetchVariables(id);
+        api.post(`/environments/${id}/activate`);
+    },
+
+    deactivateAll: () => {
+        set((s) => ({
+            environments: s.environments.map((e) => ({ ...e, is_active: false })),
+        }));
     },
 
     fetchVariables: async (envId) => {
@@ -108,8 +110,9 @@ export const useEnvStore = create<EnvState>((set, get) => ({
     },
 
     getActiveVariablesMap: () => {
-        const { activeEnvironmentId, variablesByEnv } = get();
-        if (!activeEnvironmentId) return {};
-        return Object.fromEntries((variablesByEnv[activeEnvironmentId] ?? []).map((v) => [v.key, v.value]));
+        const { environments, variablesByEnv } = get();
+        const activeId = environments.find((e) => e.is_active)?.id;
+        if (!activeId) return {};
+        return Object.fromEntries((variablesByEnv[activeId] ?? []).map((v) => [v.key, v.value]));
     },
 }));

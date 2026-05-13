@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -32,6 +32,7 @@ class RequestCreate(BaseModel):
     url: str
     headers: dict = {}
     params: dict = {}
+    path_vars: dict = {}
     body: dict = {}
     auth: dict = {}
     description: str = ""
@@ -44,6 +45,7 @@ class RequestUpdate(BaseModel):
     url: Optional[str] = None
     headers: Optional[dict] = None
     params: Optional[dict] = None
+    path_vars: Optional[dict] = None
     body: Optional[dict] = None
     auth: Optional[dict] = None
     description: Optional[str] = None
@@ -58,6 +60,7 @@ class RequestResponse(BaseModel):
     url: str
     headers: dict
     params: dict
+    path_vars: dict
     body: dict
     auth: dict
     description: Optional[str]
@@ -66,6 +69,11 @@ class RequestResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("path_vars", mode="before")
+    @classmethod
+    def coerce_path_vars(cls, v):
+        return v if v is not None else {}
 
 
 class CollectionWithRequests(CollectionResponse):

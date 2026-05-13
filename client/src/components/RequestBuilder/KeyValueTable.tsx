@@ -3,9 +3,11 @@ import type { KeyValueRow } from '@/lib/types';
 interface Props {
   rows: KeyValueRow[];
   onChange: (rows: KeyValueRow[]) => void;
+  readOnlyKeys?: boolean;
 }
 
-export default function KeyValueTable({ rows, onChange }: Props) {
+export default function KeyValueTable({ rows, onChange, readOnlyKeys = false }: Props) {
+
   function update(index: number, field: keyof KeyValueRow, value: string | boolean) {
     const updated = rows.map((row, i) => i === index ? { ...row, [field]: value } : row);
     if (index === rows.length - 1 && value !== '' && field !== 'enabled') {
@@ -40,9 +42,10 @@ export default function KeyValueTable({ rows, onChange }: Props) {
           <div className="flex-1 min-w-0">
             <input
               value={row.key}
-              onChange={(e) => update(i, 'key', e.target.value)}
+              onChange={(e) => !readOnlyKeys && update(i, 'key', e.target.value)}
+              readOnly={readOnlyKeys}
               placeholder="Key"
-              className="kv-cell-input"
+              className={`kv-cell-input${readOnlyKeys ? ' text-[#aaa] cursor-default' : ''}`}
             />
           </div>
           <div className="kv-col-divider">

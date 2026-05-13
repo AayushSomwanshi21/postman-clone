@@ -22,6 +22,7 @@ class Request(Base):
     url = Column(Text, nullable=False)
     headers = Column(JSONB, default={})
     params = Column(JSONB, default={})
+    path_vars = Column(JSONB, default={})
     body = Column(JSONB, default={})
     auth = Column(JSONB, default={})
     description = Column(Text)

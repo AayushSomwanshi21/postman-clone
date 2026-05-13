@@ -35,6 +35,7 @@ export interface SavedRequest {
   url: string;
   headers: Record<string, string>;
   params: Record<string, string>;
+  path_vars: Record<string, string>;
   body: { type: string; content: string };
   auth: Record<string, string>;
   description: string;

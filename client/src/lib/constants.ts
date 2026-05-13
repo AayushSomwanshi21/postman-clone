@@ -20,6 +20,10 @@ export const PM = {
   sendBtn: '#4285f4',
 };
 
+export const URL_INPUT_TEXT_STYLE = {
+  fontSize: 13, fontFamily: 'monospace', padding: '0 12px',
+} as const;
+
 export const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 export const METHOD_HEX: Record<string, string> = {
