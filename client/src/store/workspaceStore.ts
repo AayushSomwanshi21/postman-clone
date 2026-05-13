@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '@/lib/api';
 import type { Workspace } from '@/lib/types';
 import { useCollectionStore } from './collectionStore';
+import { useEnvStore } from './envStore';
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -22,6 +23,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
 
     if (active) {
       useCollectionStore.getState().fetchCollections(active.id);
+      useEnvStore.getState().fetchEnvironments(active.id);
     }
   },
 
@@ -30,5 +32,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
     set({ activeWorkspace: workspace });
 
     useCollectionStore.getState().fetchCollections(workspace.id);
+    useEnvStore.getState().fetchEnvironments(workspace.id);
   },
 }));
