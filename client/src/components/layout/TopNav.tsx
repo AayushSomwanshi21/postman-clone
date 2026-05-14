@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, LogOut } from 'lucide-react';
 
 export default function TopNav() {
   const logout = useAuthStore((s) => s.logout);
@@ -21,7 +21,7 @@ export default function TopNav() {
     <div style={{
       display: 'flex', alignItems: 'center', height: 40,
       background: PM.bgTopBar, borderBottom: `1px solid ${PM.border}`,
-      padding: '0 12px', gap: 12, flexShrink: 0
+      padding: '4px 12px', gap: 12, flexShrink: 0
     }}>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
@@ -38,11 +38,18 @@ export default function TopNav() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 4,
+              display: 'flex', alignItems: 'center', gap: 6,
               border: `2px solid ${PM.border}`, borderRadius: 4,
               padding: '3px 8px', fontSize: 12, color: PM.muted, cursor: 'pointer',
               userSelect: 'none',
             }}>
+              {activeEnv && (
+                <span style={{
+                  width: 7, height: 7, borderRadius: '50%', background: '#22c55e',
+                  display: 'inline-block', flexShrink: 0,
+                  boxShadow: '0 0 4px 1px #22c55e99',
+                }} />
+              )}
               {activeEnv?.name ?? 'No environment'}
               <span><ChevronDown size={12} /></span>
             </div>
@@ -68,9 +75,11 @@ export default function TopNav() {
         </DropdownMenu>
         <button onClick={logout}
           style={{
-            fontSize: 12, color: PM.muted, background: 'none', border: 'none',
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 12, color: PM.muted, background: 'none', border: `2px solid ${PM.border}`,
             cursor: 'pointer', padding: '3px 8px', borderRadius: 4
           }}>
+          <LogOut size={16} color='red' />
           Sign out
         </button>
       </div>

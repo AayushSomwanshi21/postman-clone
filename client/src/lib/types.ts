@@ -37,7 +37,15 @@ export interface SavedRequest {
   params: Record<string, string>;
   path_vars: Record<string, string>;
   body: { type: string; content: string };
-  auth: Record<string, string>;
+  auth: {
+    type?: 'none' | 'bearer' | 'basic' | 'apikey';
+    token?: string;
+    username?: string;
+    password?: string;
+    key?: string;
+    value?: string;
+    in?: 'header' | 'query';
+  };
   description: string;
   position: number;
   created_at: string;

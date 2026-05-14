@@ -9,7 +9,7 @@ import MethodSelector from './MethodSelector';
 import { PM, URL_INPUT_TEXT_STYLE } from '@/lib/constants';
 
 export default function UrlBar() {
-  const { method, url, setUrl, headers, params, pathVars, body, setResponse, setLoading, loading } = useRequestStore();
+  const { method, url, setUrl, headers, params, pathVars, body, authType, authData, setResponse, setLoading, loading } = useRequestStore();
   const token = useAuthStore((s) => s.token);
   const vars = useEnvStore(useShallow((s) => s.getActiveVariablesMap()));
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,12 +30,24 @@ export default function UrlBar() {
         url
       );
       const resolvedUrl = interpolate(withPathVars, vars);
-      const enabledHeaders = Object.fromEntries(
+      const enabledHeaders: Record<string, string> = Object.fromEntries(
         headers.filter((h) => h.enabled && h.key).map((h) => [h.key, interpolate(h.value, vars)])
       );
-      const enabledParams = Object.fromEntries(
+      const enabledParams: Record<string, string> = Object.fromEntries(
         params.filter((p) => p.enabled && p.key).map((p) => [p.key, interpolate(p.value, vars)])
       );
+
+      if (authType === 'bearer' && authData.token) {
+        enabledHeaders['Authorization'] = `Bearer ${authData.token}`;
+      } else if (authType === 'basic' && (authData.username || authData.password)) {
+        enabledHeaders['Authorization'] = `Basic ${btoa(`${authData.username ?? ''}:${authData.password ?? ''}`)}`;
+      } else if (authType === 'apikey' && authData.key && authData.value) {
+        if ((authData.in ?? 'header') === 'header') {
+          enabledHeaders[authData.key] = authData.value;
+        } else {
+          enabledParams[authData.key] = authData.value;
+        }
+      }
       let parsedBody = null;
       if (body && method !== 'GET') {
         try { parsedBody = JSON.parse(body); } catch { parsedBody = body; }
