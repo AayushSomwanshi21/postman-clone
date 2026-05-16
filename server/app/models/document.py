@@ -16,6 +16,10 @@ class Document(Base):
         unique=True,
     )
     content = Column(Text, nullable=False)
-    is_stale = Column(Boolean, nullable=False, default="false")
-    updated_at = Column(DateTime, nullable=False,
-                        server_default=func.now(), onupdate=func.now())
+    is_stale = Column(Boolean, nullable=False, default=False)
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
