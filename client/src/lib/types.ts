@@ -70,3 +70,19 @@ export interface EnvVariable {
 
 export type RequestTab = 'params' | 'headers' | 'body' | 'auth';
 export type ResponseTab = 'body' | 'headers';
+
+export interface DocumentListItem {
+  id: string;
+  collection_id: string;
+  name: string;
+  is_stale: boolean;
+  updated_at: string;
+}
+
+export interface Document extends DocumentListItem {
+  content: string;
+}
+
+export interface GenerateDocsRequest {
+  name?: string;
+}

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Text, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Text, DateTime, ForeignKey, Boolean, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
@@ -15,6 +15,7 @@ class Document(Base):
         nullable=False,
         unique=True,
     )
+    name = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     is_stale = Column(Boolean, nullable=False, default=False)
     updated_at = Column(

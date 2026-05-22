@@ -5,6 +5,7 @@ from uuid import UUID
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.collection import Collection
+from app.models.document import Document
 from app.models.workspace import Workspace
 from app.models.environment import Environment
 
@@ -36,6 +37,23 @@ def get_collection(
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found")
     return collection
+
+
+def get_document(
+    document_id: UUID,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+) -> Document:
+    document = (
+        db.query(Document)
+        .join(Collection, Document.collection_id == Collection.id)
+        .join(Workspace, Collection.workspace_id == Workspace.id)
+        .filter(Document.id == document_id, Workspace.owner_id == user_id)
+        .first()
+    )
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return document
 
 
 def get_environment(
