@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { PM } from '@/lib/constants';
 import { useCollectionStore } from '@/store/collectionStore';
 import { useDocumentStore } from '@/store/documentStore';
 import { toast } from 'sonner';
