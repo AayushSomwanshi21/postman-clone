@@ -2,7 +2,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PM } from '@/lib/constants';
 import type { Document } from '@/lib/types';
-import { useRef } from 'react';
+import { exportDocument } from '@/lib/documentService';
+import { toast } from 'sonner';
 
 interface DocsGeneratorProps {
   document: Document;
@@ -10,8 +11,19 @@ interface DocsGeneratorProps {
 
 export default function DocsGenerator({ document }: DocsGeneratorProps) {
 
-  const contentRef = useRef<HTMLDivElement>(null);
-
+  const handleDownloadPDF = async () => {
+    try {
+      const { blob, filename } = await exportDocument(document.id);
+      const url = URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (error) {
+      toast.error('Failed to export document');
+    }
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -21,7 +33,7 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
         style={{ borderColor: PM.border }}
       >
         <button
-          // onClick={handleDownloadPDF}
+          onClick={handleDownloadPDF}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs text-neutral-300 border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 transition-colors cursor-pointer"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -44,7 +56,7 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
       )}
 
       {/* Markdown preview */}
-      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto px-8 py-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6">
         <div className="prose prose-invert prose-sm max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {document.content}

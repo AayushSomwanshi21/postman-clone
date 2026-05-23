@@ -26,3 +26,17 @@ export async function updateDocument(documentId: string, payload: Partial<Pick<D
 export async function deleteDocument(documentId: string) {
     await api.delete(`/documents/${documentId}`);
 }
+
+export async function exportDocument(documentId: string) {
+    const response = await api.post(`/documents/${documentId}/export`, null,
+        { responseType: 'blob' }
+    );
+
+    const disposition = response.headers['content-disposition'];
+    const filename = disposition?.match(/filename="(.+?)"/)?.[1] ?? 'api-docs.pdf';
+
+    return {
+        blob: response.data,
+        filename
+    };
+}
