@@ -120,9 +120,11 @@ def export_document(
 
     html_content = markdown.markdown(
         document.content,
-        extensions=["tables", "fenced_code", "codehilite", "toc"]
+        extensions=["tables", "fenced_code", "toc"]
     )
 
+    html_content = re.sub(r'<pre><code[^>]*>', '<pre>', html_content)
+    html_content = re.sub(r'</code></pre>', '</pre>', html_content)
     # Wrap with styles
     full_html = f"""
     <!DOCTYPE html>
@@ -130,22 +132,23 @@ def export_document(
     <head>
       <meta charset="utf-8">
       <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; padding: 40px; max-width: 800px; margin: 0 auto; line-height: 1.7; }}
-        h1 {{ font-size: 28px; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px; }}
-        h2 {{ font-size: 22px; font-weight: 600; margin-top: 32px; margin-bottom: 12px; }}
-        h3 {{ font-size: 17px; font-weight: 600; margin-top: 24px; margin-bottom: 8px; }}
-        p  {{ margin-bottom: 12px; }}
-        code {{ background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; }}
-        pre {{ background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-size: 12px; margin: 12px 0; overflow: hidden; }}
-        pre code {{ background: none; color: inherit; padding: 0; }}
-        table {{ width: 100%; border-collapse: collapse; margin: 16px 0; }}
+        @page {{ margin: 40px; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; line-height: 1.4; }}
+        h1 {{ font-size: 28px; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; margin: 0 0 10px 0; }}
+        h2 {{ font-size: 22px; font-weight: 600; margin: 20px 0 6px 0; }}
+        h3 {{ font-size: 17px; font-weight: 600; margin: 14px 0 4px 0; }}
+        h4 {{ font-size: 14px; font-weight: 600; margin: 10px 0 4px 0; }}
+        p  {{ margin: 0 0 8px 0; }}
+        code {{ font-family: monospace; font-size: 12px; }}
+        pre {{ background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; font-size: 12px; font-family: monospace; margin: 8px 0; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 8px 0; }}
         th {{ background: #f9fafb; text-align: left; padding: 10px 12px; border: 1px solid #e5e7eb; font-size: 13px; font-weight: 600; }}
         td {{ padding: 9px 12px; border: 1px solid #e5e7eb; font-size: 13px; }}
         tr:nth-child(even) td {{ background: #f9fafb; }}
-        blockquote {{ border-left: 4px solid #e5e7eb; margin: 0 0 12px; padding-left: 16px; color: #6b7280; }}
+        blockquote {{ border-left: 4px solid #e5e7eb; margin: 0 0 8px 0; padding-left: 16px; color: #6b7280; }}
         a {{ color: #2563eb; text-decoration: none; }}
-        ul, ol {{ padding-left: 24px; margin-bottom: 12px; }}
-        li {{ margin-bottom: 4px; }}
+        ul, ol {{ padding-left: 24px; margin: 0 0 8px 0; }}
+        li {{ margin: 0 0 2px 0; }}
       </style>
     </head>
     <body>{html_content}</body>

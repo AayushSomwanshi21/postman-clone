@@ -111,6 +111,12 @@ def build_collection_markdown(
         sections.extend(
             [
                 f"## Endpoint {index}: {request.name}",
+                "#### Description",
+                _markdown_fragment(
+                    generated.get("description"),
+                    "Description could not be generated.",
+                ),
+                "",
                 f"### Method\n{request.method}",
                 f"### URL\n{request.url}",
                 _table_from_mapping("Headers", request.headers),
@@ -121,12 +127,6 @@ def build_collection_markdown(
                 "```json",
                 _pretty_json(_normalize_request_body(request.body)),
                 "```",
-                "",
-                "#### Description",
-                _markdown_fragment(
-                    generated.get("description"),
-                    "Description could not be generated.",
-                ),
                 "",
                 "#### Example Request",
                 "```json",
