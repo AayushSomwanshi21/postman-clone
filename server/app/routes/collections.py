@@ -10,7 +10,7 @@ from app.schemas.collection import (
     CollectionCreate, CollectionUpdate, CollectionResponse, CollectionWithRequests,
     RequestCreate, RequestUpdate, RequestResponse,
 )
-from app.services.db import get_workspace, get_collection
+from app.services.db import get_workspace, get_collection, mark_collection_document_stale
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 
@@ -75,6 +75,7 @@ def update_collection(
 ):
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(collection, field, value)
+    mark_collection_document_stale(collection.id, db)
     db.commit()
     db.refresh(collection)
     return collection
@@ -124,6 +125,7 @@ def create_request(
         position=data.position,
     )
     db.add(request)
+    mark_collection_document_stale(collection.id, db)
     db.commit()
     db.refresh(request)
     return request
@@ -143,6 +145,7 @@ def update_request(
         raise HTTPException(status_code=404, detail="Request not found")
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(request, field, value)
+    mark_collection_document_stale(collection.id, db)
     db.commit()
     db.refresh(request)
     return request
@@ -160,4 +163,5 @@ def delete_request(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
     db.delete(request)
+    mark_collection_document_stale(collection.id, db)
     db.commit()

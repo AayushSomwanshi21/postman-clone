@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
 import type { Collection, SavedRequest } from '@/lib/types';
+import { useDocumentStore } from './documentStore';
 
 interface CollectionState {
   collections: Collection[];
@@ -48,11 +49,13 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   deleteCollection: async (id) => {
     await api.delete(`/collections/${id}`);
     set((s) => ({ collections: s.collections.filter((c) => c.id !== id) }));
+    useDocumentStore.getState().removeDocumentByCollection(id);
   },
 
   updateCollection: async (id, name) => {
     const { data } = await api.put<Collection>(`/collections/${id}`, { name });
     set((s) => ({ collections: s.collections.map((c) => c.id === id ? data : c) }));
+    useDocumentStore.getState().markCollectionDocumentStale(id);
   },
 
   toggleExpand: async (id) => {

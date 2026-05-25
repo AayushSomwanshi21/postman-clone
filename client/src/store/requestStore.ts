@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '@/lib/api';
 import type { SavedRequest, Response, KeyValueRow } from '@/lib/types';
 import { useCollectionStore } from '@/store/collectionStore';
+import { useDocumentStore } from '@/store/documentStore';
 import { useTabStore } from '@/store/tabStore';
 
 export type AuthType = 'none' | 'bearer' | 'basic' | 'apikey';
@@ -112,6 +113,7 @@ export const useRequestStore = create<RequestState>((set) => ({
 
     const { data } = await api.post<SavedRequest>(`/collections/${collectionId}/requests`, payload);
     useCollectionStore.getState().addRequest(collectionId, data);
+    useDocumentStore.getState().markCollectionDocumentStale(collectionId);
     useTabStore.getState().openTab({ id: data.id, name: data.name, method: data.method });
     useRequestStore.getState().loadRequest(data);
   },
@@ -130,10 +132,12 @@ export const useRequestStore = create<RequestState>((set) => ({
     };
     const { data } = await api.put<SavedRequest>(`/collections/${collectionId}/requests/${requestId}`, payload);
     useCollectionStore.getState().updateRequest(collectionId, data);
+    useDocumentStore.getState().markCollectionDocumentStale(collectionId);
   },
   deleteRequest: async (collectionId, requestId) => {
     await api.delete(`/collections/${collectionId}/requests/${requestId}`);
     useCollectionStore.getState().removeRequest(collectionId, requestId);
+    useDocumentStore.getState().markCollectionDocumentStale(collectionId);
     useTabStore.getState().closeTab(requestId);
   },
 }));

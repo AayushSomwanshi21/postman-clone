@@ -10,6 +10,19 @@ from app.models.workspace import Workspace
 from app.models.environment import Environment
 
 
+def mark_collection_document_stale(
+    collection_id: UUID,
+    db: Session,
+) -> None:
+    document = (
+        db.query(Document)
+        .filter(Document.collection_id == collection_id)
+        .first()
+    )
+    if document and not document.is_stale:
+        document.is_stale = True
+
+
 def get_workspace(
     workspace_id: UUID,
     db: Session = Depends(get_db),

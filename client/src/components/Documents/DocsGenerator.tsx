@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PM } from '@/lib/constants';
@@ -6,6 +6,7 @@ import type { Document } from '@/lib/types';
 import { exportDocument } from '@/lib/documentService';
 import { interpolate } from '@/lib/interpolate';
 import { useEnvStore } from '@/store/envStore';
+import { useDocumentStore } from '@/store/documentStore';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -15,6 +16,8 @@ interface DocsGeneratorProps {
 
 export default function DocsGenerator({ document }: DocsGeneratorProps) {
   const activeVariables = useEnvStore(useShallow((s) => s.getActiveVariablesMap()));
+  const generateDocument = useDocumentStore((s) => s.generateDocument);
+  const [regenerating, setRegenerating] = useState(false);
   const { resolvedContent, unresolvedVariables } = useMemo(() => {
     const resolved = interpolate(document.content, activeVariables);
     const unresolved = Array.from(
@@ -45,6 +48,20 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
     }
   };
 
+  const handleRegenerate = async () => {
+    if (regenerating) return;
+
+    setRegenerating(true);
+    try {
+      await generateDocument(document.collection_id, document.name);
+      toast.success('Document regenerated', { style: { color: '#4ade80' } });
+    } catch (error) {
+      toast.error('Failed to regenerate document');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Toolbar */}
@@ -70,10 +87,23 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
       {/* Stale warning */}
       {document.is_stale && (
         <div
-          className="px-4 py-2.5 text-sm border-b"
+          className="px-4 py-2.5 text-sm border-b flex items-center justify-between gap-3"
           style={{ background: 'rgba(255, 108, 55, 0.12)', borderColor: PM.border, color: '#ffb08f' }}
         >
-          This document may be outdated. Regenerate it to sync with the latest collection changes.
+          <span>This document may be outdated. Regenerate it to sync with the latest collection changes.</span>
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: 'rgba(255, 176, 143, 0.14)',
+              color: '#ffd7c7',
+              border: '1px solid rgba(255, 176, 143, 0.28)',
+              cursor: regenerating ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {regenerating ? 'Regenerating...' : 'Regenerate'}
+          </button>
         </div>
       )}
 

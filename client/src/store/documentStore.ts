@@ -21,6 +21,8 @@ interface DocumentStoreState {
   generateDocument: (collectionId: string, name?: string) => Promise<Document>;
   updateDocument: (documentId: string, payload: Partial<Pick<Document, 'name' | 'content' | 'is_stale'>>) => Promise<Document>;
   deleteDocument: (documentId: string) => Promise<void>;
+  markCollectionDocumentStale: (collectionId: string) => void;
+  removeDocumentByCollection: (collectionId: string) => void;
 }
 
 export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
@@ -143,5 +145,50 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
       set({ loadingDocumentId: null, error: message });
       throw error;
     }
+  },
+
+  markCollectionDocumentStale: (collectionId) => {
+    set((state) => {
+      const documentListItem = state.documents.find((document) => document.collection_id === collectionId);
+      if (!documentListItem || documentListItem.is_stale) {
+        return state;
+      }
+
+      const cachedDocument = Object.values(state.documentsById).find((document) => document.collection_id === collectionId);
+
+      return {
+        documents: state.documents.map((document) =>
+          document.collection_id === collectionId ? { ...document, is_stale: true } : document
+        ),
+        documentsById: cachedDocument
+          ? {
+            ...state.documentsById,
+            [cachedDocument.id]: { ...cachedDocument, is_stale: true },
+          }
+          : state.documentsById,
+      };
+    });
+  },
+
+  removeDocumentByCollection: (collectionId) => {
+    set((state) => {
+      const cachedDocument = Object.values(state.documentsById).find((document) => document.collection_id === collectionId);
+      if (!state.documents.some((document) => document.collection_id === collectionId) && !cachedDocument) {
+        return state;
+      }
+
+      const documentsById = { ...state.documentsById };
+      if (cachedDocument) {
+        delete documentsById[cachedDocument.id];
+      }
+
+      return {
+        documents: state.documents.filter((document) => document.collection_id !== collectionId),
+        documentsById,
+        selectedDocumentId: cachedDocument && state.selectedDocumentId === cachedDocument.id
+          ? null
+          : state.selectedDocumentId,
+      };
+    });
   },
 }));

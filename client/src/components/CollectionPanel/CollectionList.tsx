@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { ChevronRight, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Pencil, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useCollectionStore } from '@/store/collectionStore';
+import { useDocumentStore } from '@/store/documentStore';
 import { useRequestStore } from '@/store/requestStore';
 import { useWorkspaceStore } from '@/store/workspaceStore';
 import RequestItem from './RequestItem';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 export default function CollectionList() {
   const { collections, expandedIds, requestsByCollection, toggleExpand, createCollection, updateCollection, deleteCollection, creating, setCreating, loading, loadingRequestIds } =
     useCollectionStore();
+  const documents = useDocumentStore((s) => s.documents);
   const { createRequest } = useRequestStore();
   const activeWorkspace = useWorkspaceStore((s) => s.activeWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -22,6 +24,11 @@ export default function CollectionList() {
   const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
 
   const renameCollection = collections.find((c) => c.id === renameCollectionId);
+  const staleCollectionIds = new Set(
+    documents
+      .filter((document) => document.is_stale)
+      .map((document) => document.collection_id)
+  );
 
   async function handleCreate() {
     const name = inputRef.current?.value.trim();
@@ -154,7 +161,14 @@ export default function CollectionList() {
                   transition: 'transform 0.15s',
                 }}
               />
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{col.name}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', flex: 1 }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{col.name}</span>
+                {staleCollectionIds.has(col.id) && (
+                  <span title="This collection has unsynced changes. Regenerate the document to update.">
+                    <RefreshCw size={12} color="#ff6c37" />
+                  </span>
+                )}
+              </span>
               {hoveredId === col.id && (
                 <MoreHorizontal
                   size={13}
