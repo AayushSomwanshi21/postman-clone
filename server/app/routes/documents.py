@@ -9,6 +9,7 @@ from io import BytesIO
 from app.database import get_db
 from app.models.collection import Collection, Request
 from app.models.document import Document
+from app.models.environment import Environment, EnvVariable
 from app.schemas.ai import GenerateDocsRequest
 from app.schemas.document import DocumentListResponse, DocumentResponse, DocumentUpdate
 from app.services.ai_service import (
@@ -18,6 +19,7 @@ from app.services.ai_service import (
 )
 from app.middleware.auth import get_current_user
 from app.services.db import get_collection, get_document, get_workspace
+from app.utils.interpolate import interpolate_content, find_unresolved_variables
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -116,10 +118,47 @@ def delete_document(
 @router.post("/{document_id}/export", status_code=200)
 def export_document(
     document: Document = Depends(get_document),
+    db: Session = Depends(get_db),
 ):
+    collection = (
+        db.query(Collection)
+        .filter(Collection.id == document.collection_id)
+        .first()
+    )
+    if collection is None:
+        raise HTTPException(status_code=404, detail="Collection not found")
+
+    active_environment = (
+        db.query(Environment)
+        .filter(
+            Environment.workspace_id == collection.workspace_id,
+            Environment.is_active.is_(True),
+        )
+        .first()
+    )
+    variables: dict[str, str] = {}
+    if active_environment is not None:
+        env_variables = (
+            db.query(EnvVariable)
+            .filter(EnvVariable.env_id == active_environment.id)
+            .all()
+        )
+        variables = {
+            variable.key: variable.value for variable in env_variables}
+
+    resolved_content = interpolate_content(document.content, variables)
+    unresolved_variables = find_unresolved_variables(resolved_content)
+    if unresolved_variables:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "Some environment variables could not be resolved for export.",
+                "unresolved_variables": unresolved_variables,
+            },
+        )
 
     html_content = markdown.markdown(
-        document.content,
+        resolved_content,
         extensions=["tables", "fenced_code", "toc"]
     )
 
