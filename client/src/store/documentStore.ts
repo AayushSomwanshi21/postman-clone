@@ -14,6 +14,7 @@ interface DocumentStoreState {
   selectedDocumentId: string | null;
   loading: boolean;
   loadingDocumentId: string | null;
+  regeneratingDocumentId: string | null;
   error: string | null;
 
   fetchDocuments: (workspaceId: string) => Promise<void>;
@@ -31,6 +32,7 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
   selectedDocumentId: null,
   loading: false,
   loadingDocumentId: null,
+  regeneratingDocumentId: null,
   error: null,
 
   fetchDocuments: async (workspaceId) => {
@@ -76,7 +78,8 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
   },
 
   generateDocument: async (collectionId, name) => {
-    set({ error: null });
+    const existingDocument = get().documents.find((document) => document.collection_id === collectionId) ?? null;
+    set({ error: null, regeneratingDocumentId: existingDocument?.id ?? null });
     try {
       const document = await generateDocs(collectionId, { name });
       set((state) => {
@@ -93,12 +96,13 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
           documents: exists
             ? state.documents.map((item) => item.id === document.id ? nextListItem : item)
             : [...state.documents, nextListItem],
+          regeneratingDocumentId: null,
         };
       });
       return document;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to generate document';
-      set({ error: message });
+      set({ error: message, regeneratingDocumentId: null });
       throw error;
     }
   },

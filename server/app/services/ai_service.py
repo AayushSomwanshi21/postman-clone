@@ -118,7 +118,7 @@ def build_collection_markdown(
                 ),
                 "",
                 f"### Method\n{request.method}",
-                f"### URL\n{request.url}",
+                f"### URL\n{(request.url or '').strip() or 'None'}",
                 _table_from_mapping("Headers", request.headers),
                 _table_from_mapping("Query Params", request.params),
                 _table_from_mapping("Path Variables", request.path_vars),
@@ -175,7 +175,7 @@ Rules:
   - example_response
 - Each field should contain a markdown fragment only for that section's content.
 - Do not include outer explanations, headings, or markdown for other sections.
-
+- If the URL of document is missing then just return empty json object for that endpoint.
 # Collection
 Name: {collection.name}
 Description: {description}

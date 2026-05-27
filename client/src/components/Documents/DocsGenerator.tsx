@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PM } from '@/lib/constants';
 import type { Document } from '@/lib/types';
+import { Spinner } from '@/components/ui/spinner';
 import { exportDocument } from '@/lib/documentService';
 import { interpolate } from '@/lib/interpolate';
 import { useEnvStore } from '@/store/envStore';
@@ -17,7 +18,8 @@ interface DocsGeneratorProps {
 export default function DocsGenerator({ document }: DocsGeneratorProps) {
   const activeVariables = useEnvStore(useShallow((s) => s.getActiveVariablesMap()));
   const generateDocument = useDocumentStore((s) => s.generateDocument);
-  const [regenerating, setRegenerating] = useState(false);
+  const regeneratingDocumentId = useDocumentStore((s) => s.regeneratingDocumentId);
+  const regenerating = regeneratingDocumentId === document.id;
   const { resolvedContent, unresolvedVariables } = useMemo(() => {
     const resolved = interpolate(document.content, activeVariables);
     const unresolved = Array.from(
@@ -43,7 +45,7 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
       a.download = filename;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 100);
-    } catch (error) {
+    } catch {
       toast.error('Failed to export document');
     }
   };
@@ -51,14 +53,11 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
   const handleRegenerate = async () => {
     if (regenerating) return;
 
-    setRegenerating(true);
     try {
       await generateDocument(document.collection_id, document.name);
       toast.success('Document regenerated', { style: { color: '#4ade80' } });
-    } catch (error) {
+    } catch {
       toast.error('Failed to regenerate document');
-    } finally {
-      setRegenerating(false);
     }
   };
 
@@ -72,7 +71,7 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
         <button
           onClick={handleDownloadPDF}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs text-neutral-300 border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-neutral-800"
-          disabled={unresolvedVariables.length > 0}
+          disabled={unresolvedVariables.length > 0 || regenerating}
           title={unresolvedVariables.length > 0 ? 'Resolve all environment variables before exporting.' : 'Download PDF'}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -119,11 +118,31 @@ export default function DocsGenerator({ document }: DocsGeneratorProps) {
       )}
 
       {/* Markdown preview */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6">
-        <div className="prose prose-invert prose-sm max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {resolvedContent}
-          </ReactMarkdown>
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        {regenerating && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center"
+            style={{ background: 'rgba(10, 10, 10, 0.45)', backdropFilter: 'blur(2px)' }}
+            aria-live="polite"
+          >
+            <div
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm"
+            >
+              <Spinner className="size-4" />
+              <span>Regenerating document...</span>
+            </div>
+          </div>
+        )}
+        <div
+          className="h-full overflow-y-auto px-8 py-6"
+          style={{ pointerEvents: regenerating ? 'none' : 'auto' }}
+          aria-busy={regenerating}
+        >
+          <div className="prose prose-invert prose-sm max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {resolvedContent}
+            </ReactMarkdown>
+          </div>
         </div>
       </div>
     </div>

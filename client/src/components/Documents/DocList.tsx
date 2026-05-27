@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MoreHorizontal, Pencil, Trash2, Plus } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { ActionDialog } from '@/components/ui/action-dialog';
 import GenerateDocumentDialog from '@/components/Documents/GenerateDocumentDialog';
 import { Spinner } from '@/components/ui/spinner';
@@ -14,6 +14,8 @@ export default function DocList() {
         selectedDocumentId,
         loading,
         fetchDocumentById,
+        generateDocument,
+        regeneratingDocumentId,
         updateDocument,
         deleteDocument,
     } = useDocumentStore();
@@ -30,6 +32,17 @@ export default function DocList() {
             await fetchDocumentById(document.id);
         } catch {
             toast.error('Failed to load document');
+        }
+    }
+
+    async function handleRegenerate(document: DocumentListItem) {
+        if (regeneratingDocumentId === document.id) return;
+        try {
+            await generateDocument(document.collection_id, document.name);
+            toast.success('Document regenerated', { style: { color: '#4ade80' } });
+            setMenuOpenId(null);
+        } catch {
+            toast.error('Failed to regenerate document');
         }
     }
 
@@ -148,6 +161,16 @@ export default function DocList() {
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                             }}
                         >
+                            <button
+                                onClick={(e) => { e.stopPropagation(); void handleRegenerate(document); }}
+                                className="menu-item"
+                                disabled={regeneratingDocumentId === document.id}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                                <RefreshCw size={13} />
+                                {regeneratingDocumentId === document.id ? 'Regenerating...' : 'Regenerate'}
+                            </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setMenuOpenId(null); setRenameDocumentId(document.id); }}
                                 className="menu-item"
