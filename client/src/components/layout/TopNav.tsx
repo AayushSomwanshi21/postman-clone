@@ -9,13 +9,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, LogOut } from 'lucide-react';
+import { ChevronDown, LogOut, Plus } from 'lucide-react';
+import { ActionDialog } from '@/components/ui/action-dialog';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function TopNav() {
   const logout = useAuthStore((s) => s.logout);
-  const { activeWorkspace } = useWorkspaceStore();
+  const { createWorkspace, setActiveWorkspace, workspaces, activeWorkspace } = useWorkspaceStore();
   const { environments, activateEnvironment, deactivateAll } = useEnvStore();
   const activeEnv = environments.find((e) => e.is_active);
+  const [dialogWorkspaceId, setDialogWorkspaceId] = useState<string | null>(null);
 
   return (
     <div style={{
@@ -24,14 +28,63 @@ export default function TopNav() {
       padding: '4px 12px', gap: 12, flexShrink: 0
     }}>
 
+      <ActionDialog
+        open={dialogWorkspaceId !== null}
+        onOpenChange={(open) => { if (!open) setDialogWorkspaceId(null); }}
+        mode="create"
+        title="New Workspace"
+        description="Enter a name for the workspace."
+        placeholder="Workspace name"
+        onConfirm={async (name) => {
+          try {
+            await createWorkspace(name || 'New Workspace');
+            toast.success('Workspace created', { style: { color: '#4ade80' } });
+          } catch {
+            toast.error('Failed to create workspace');
+          }
+        }}
+      />
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-        <div style={{
-          width: 22, height: 22, borderRadius: '50%', background: PM.accent,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontSize: 10, fontWeight: 800
-        }}>P</div>
-        <span style={{ fontSize: 13, fontWeight: 500 }}>{activeWorkspace?.name ?? 'My Workspace'}</span>
-        <span style={{ color: PM.muted, fontSize: 9 }}>▾</span>
+
+        <span style={{ fontSize: 13, fontWeight: 500 }}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                border: `2px solid ${PM.border}`, borderRadius: 4,
+                padding: '3px 8px', fontSize: 12, color: PM.muted, cursor: 'pointer',
+                userSelect: 'none',
+              }}>
+                {activeWorkspace && (
+                  <div style={{
+                    width: 22, height: 22, borderRadius: '50%', background: PM.accent,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: 10, fontWeight: 800
+                  }}>{activeWorkspace.name.charAt(0).toUpperCase()}</div>
+                )}
+                {activeWorkspace?.name ?? 'No workspace'}
+                <span><ChevronDown size={12} /></span>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent style={{ minWidth: 160 }}>
+              {workspaces.map((workspace) => (
+                <DropdownMenuItem
+                  key={workspace.id}
+                  onClick={() => setActiveWorkspace(workspace)}
+                  style={{ fontSize: 10 }}
+                >
+                  {workspace.name}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem>
+                <button className="flex items-center gap-2 italic texts-xs" onClick={(e) => { e.stopPropagation(); setDialogWorkspaceId('new'); }}>
+                  <Plus size={8} /> Add Workspace
+                </button>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>

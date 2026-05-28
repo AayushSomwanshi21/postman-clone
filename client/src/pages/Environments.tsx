@@ -11,7 +11,7 @@ export default function Environments() {
   const [selectedEnvId, setSelectedEnvId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (activeEnvironmentId && !selectedEnvId) setSelectedEnvId(activeEnvironmentId);
+    setSelectedEnvId(activeEnvironmentId);
   }, [activeEnvironmentId]);
 
   if (!activeWorkspace) return null;

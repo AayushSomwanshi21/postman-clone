@@ -23,7 +23,7 @@ export default function DocList() {
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
     const [renameDocumentId, setRenameDocumentId] = useState<string | null>(null);
     const [deleteDocumentId, setDeleteDocumentId] = useState<string | null>(null);
-    const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+    const [generateDialogOpen, setGenerateDialogOpen] = useState<boolean>(false);
 
     const renameDocument = documents.find((document) => document.id === renameDocumentId) ?? null;
 
