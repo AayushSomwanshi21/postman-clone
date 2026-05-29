@@ -5,7 +5,7 @@ __pycache__/
 server/.env
 .venv/
 venv/
-
+.venv-bench
 # Node
 node_modules/
 client/dist/

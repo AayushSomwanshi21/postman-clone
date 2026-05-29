@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.auth import router as auth_router
@@ -6,8 +7,17 @@ from app.routes.collections import router as collections_router
 from app.routes.workspaces import router as workspaces_router
 from app.routes.environments import router as environments_router
 from app.routes.documents import router as documents_router
+from app.services.proxy_service import startup_proxy_client, shutdown_proxy_client
 
-app = FastAPI(title="Postman Clone API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await startup_proxy_client()
+    yield
+    await shutdown_proxy_client()
+
+app = FastAPI(title="Postman Clone API", lifespan=lifespan)
+
 
 app.add_middleware(
     CORSMiddleware,
