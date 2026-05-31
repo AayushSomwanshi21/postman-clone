@@ -40,3 +40,18 @@ export async function exportDocument(documentId: string) {
         filename
     };
 }
+
+export async function searchDocuments(
+    workspaceId: string,
+    query: string
+) {
+    const { data } = await api.get<DocumentListItem[]>(`/documents/search`, {
+        params: {
+            workspace_id: workspaceId,
+            query: query,
+        }
+    });
+
+    return data;
+
+}

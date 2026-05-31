@@ -40,6 +40,34 @@ def list_documents(
         .all()
     )
 
+# ---- Search ----
+
+
+@router.get("/search", response_model=list[DocumentResponse])
+def search_documents(
+    workspace_id: UUID,
+    query: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    get_workspace(workspace_id=workspace_id, db=db, user_id=user_id)
+
+    q = query.strip()
+    if not q:
+        return []
+
+    return (
+        db.query(Document)
+        .join(Collection, Document.collection_id == Collection.id)
+        .filter(
+            Collection.workspace_id == workspace_id,
+            Document.name.ilike(f"%{q}%"),
+        )
+        .order_by(Document.updated_at.desc())
+        .limit(20)
+        .all()
+    )
+
 
 @router.get("/{document_id}", response_model=DocumentResponse)
 def get_document_by_id(

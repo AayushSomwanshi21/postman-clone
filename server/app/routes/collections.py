@@ -23,7 +23,8 @@ def list_collections(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
-    workspace = get_workspace(workspace_id=workspace_id, db=db, user_id=user_id)
+    workspace = get_workspace(
+        workspace_id=workspace_id, db=db, user_id=user_id)
     return db.query(Collection).filter(Collection.workspace_id == workspace.id).all()
 
 
@@ -43,6 +44,33 @@ def create_collection(
     db.commit()
     db.refresh(collection)
     return collection
+
+# ---- Search ----
+
+
+@router.get("/search", response_model=list[CollectionResponse])
+def search_collections(
+    workspace_id: UUID,
+    query: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    get_workspace(workspace_id=workspace_id, db=db, user_id=user_id)
+
+    q = query.strip()
+    if not q:
+        return []
+
+    return (
+        db.query(Collection)
+        .filter(
+            Collection.workspace_id == workspace_id,
+            Collection.name.ilike(f"%{q}%"),
+        )
+        .order_by(Collection.updated_at.desc())
+        .limit(20)
+        .all()
+    )
 
 
 @router.get("/{collection_id}", response_model=CollectionWithRequests)

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { ChevronRight, MoreHorizontal, Pencil, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useCollectionStore } from '@/store/collectionStore';
@@ -9,6 +9,8 @@ import RequestItem from './RequestItem';
 import { PM } from '@/lib/constants';
 import { ActionDialog } from '@/components/ui/action-dialog';
 import { toast } from 'sonner';
+import type { Collection } from '@/lib/types';
+import { searchCollections } from '@/lib/collectionService';
 
 export default function CollectionList() {
   const { collections, expandedIds, requestsByCollection, toggleExpand, createCollection, updateCollection, deleteCollection, creating, setCreating, loading, loadingRequestIds } =
@@ -23,12 +25,57 @@ export default function CollectionList() {
   const [renameCollectionId, setRenameCollectionId] = useState<string | null>(null);
   const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Collection[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const renameCollection = collections.find((c) => c.id === renameCollectionId);
   const staleCollectionIds = new Set(
     documents
       .filter((document) => document.is_stale)
       .map((document) => document.collection_id)
   );
+
+  // --- debounced search effect ---
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const q = searchTerm.trim();
+
+    if (!q) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+
+    debounceRef.current = setTimeout(async () => {
+      if (!activeWorkspace) return;
+      try {
+        const results = await searchCollections(activeWorkspace.id, q);
+        setSearchResults(results);
+      } catch {
+        toast.error('Search failed');
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchTerm, activeWorkspace]);
+
+  function handleSearchResultClick(collectionId: string) {
+    // if not expanded, expand it and clear search so user sees it in the list
+    if (!expandedIds.has(collectionId)) {
+      toggleExpand(collectionId);
+    }
+    setSearchTerm('');
+  }
 
   async function handleCreate() {
     const name = inputRef.current?.value.trim();
@@ -42,8 +89,41 @@ export default function CollectionList() {
     setCreating(false);
   }
 
+  const isSearching = searchTerm.trim().length > 0;
+
   return (
     <>
+      <div style={{ padding: '4px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: PM.bgInput,
+            border: `1px solid ${PM.border}`,
+            borderRadius: 4,
+            padding: '4px 8px',
+          }}
+        >
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setSearchTerm(''); }}
+            placeholder="Search Collections"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              fontSize: 13,
+              color: PM.text,
+              width: '100%',
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = PM.accent)}
+            onBlur={(e) => (e.currentTarget.style.borderColor = PM.border)}
+          />
+        </div>
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 4px 6px' }}>
         <span style={{ fontSize: 11, fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Collections
@@ -77,16 +157,44 @@ export default function CollectionList() {
         </div>
       )}
 
-      {loading && (
-        <div style={{ padding: '6px 4px' }}>
-          <Spinner />
-        </div>
-      )}
+      {!isSearching && loading && <div style={{ padding: '6px 4px' }}><Spinner /></div>}
 
-      {!loading && collections.length === 0 && !creating && (
+      {!isSearching && !loading && collections.length === 0 && !creating && (
         <div style={{ fontSize: 12, color: '#4a4a4a', padding: '6px 4px', lineHeight: 1.5 }}>
           No collections yet.<br />Create one to get started.
         </div>
+      )}
+
+      {isSearching && (
+        <>
+          {searchLoading && <div style={{ padding: '6px 4px' }}><Spinner /></div>}
+
+          {!searchLoading && searchResults.length === 0 && (
+            <div style={{ fontSize: 12, color: '#4a4a4a', padding: '6px 4px' }}>
+              No collections match "{searchTerm}".
+            </div>
+          )}
+
+          {!searchLoading && searchResults.map((col) => (
+            <div
+              key={col.id}
+              onClick={() => handleSearchResultClick(col.id)}
+              onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 4px', cursor: 'pointer', borderRadius: 4, fontSize: 13, color: PM.text }}
+            >
+              <ChevronRight size={13} color={PM.muted} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                {col.name}
+              </span>
+              {staleCollectionIds.has(col.id) && (
+                <span title="Unsynced changes">
+                  <RefreshCw size={12} color="#ff6c37" />
+                </span>
+              )}
+            </div>
+          ))}
+        </>
       )}
 
       <ActionDialog
@@ -141,7 +249,7 @@ export default function CollectionList() {
         }}
       />
 
-      {collections.map((col) => (
+      {!isSearching && collections.map((col) => (
         <div key={col.id}>
           <div
             onMouseEnter={() => setHoveredId(col.id)}

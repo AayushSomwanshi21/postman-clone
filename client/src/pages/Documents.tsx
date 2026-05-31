@@ -21,18 +21,6 @@ export default function Documents() {
         borderRight: `1px solid ${PM.border}`,
         display: 'flex', flexDirection: 'column', flexShrink: 0,
       }}>
-        <div style={{ padding: 8 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: PM.bgInput, border: `1px solid ${PM.border}`,
-            borderRadius: 4, padding: '4px 8px'
-          }}>
-            <input placeholder="Search" style={{
-              background: 'transparent', border: 'none',
-              outline: 'none', fontSize: 13, color: PM.muted, width: '100%'
-            }} />
-          </div>
-        </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
           <DocList />

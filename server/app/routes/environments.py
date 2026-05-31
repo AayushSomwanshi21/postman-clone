@@ -23,7 +23,8 @@ def list_environments(
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
-    workspace = get_workspace(workspace_id=workspace_id, db=db, user_id=user_id)
+    workspace = get_workspace(
+        workspace_id=workspace_id, db=db, user_id=user_id)
     return db.query(Environment).filter(Environment.workspace_id == workspace.id).all()
 
 
@@ -138,3 +139,29 @@ def delete_variable(
         raise HTTPException(status_code=404, detail="Variable not found")
     db.delete(variable)
     db.commit()
+
+
+# ---- Search ----
+@router.get("/search", response_model=list[EnvironmentResponse])
+def search_environments(
+    workspace_id: UUID,
+    query: str,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
+    get_workspace(workspace_id=workspace_id, db=db, user_id=user_id)
+
+    q = query.strip()
+    if not q:
+        return []
+
+    return (
+        db.query(Environment)
+        .filter(
+            Environment.workspace_id == workspace_id,
+            Environment.name.ilike(f"%{q}%"),
+        )
+        .order_by(Environment.created_at.desc())
+        .limit(20)
+        .all()
+    )

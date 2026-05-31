@@ -23,11 +23,13 @@ export default function Environments() {
         borderRight: `1px solid ${PM.border}`,
         display: 'flex', flexDirection: 'column', flexShrink: 0,
       }}>
-        <EnvList
-          selectedId={selectedEnvId}
-          onSelect={setSelectedEnvId}
-          workspaceId={activeWorkspace.id}
-        />
+        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
+          <EnvList
+            selectedId={selectedEnvId}
+            onSelect={setSelectedEnvId}
+            workspaceId={activeWorkspace.id}
+          />
+        </div>
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: PM.bgContent }}>

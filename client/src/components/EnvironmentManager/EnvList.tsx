@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { MoreHorizontal, Plus, Pencil, Trash2, CheckCircle } from 'lucide-react';
 import { useEnvStore } from '@/store/envStore';
 import { ActionDialog } from '@/components/ui/action-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { PM } from '@/lib/constants';
 import { toast } from 'sonner';
+import { searchEnvironments } from '@/lib/environmentService';
+import type { Environment } from '@/lib/types';
 
 interface Props {
   selectedId: string | null;
@@ -22,7 +24,48 @@ export default function EnvList({ selectedId, onSelect, workspaceId }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Environment[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const renameEnv = environments.find((e) => e.id === renameId);
+  const isSearching = searchTerm.trim().length > 0;
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const q = searchTerm.trim();
+
+    if (!q) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await searchEnvironments(workspaceId, q);
+        setSearchResults(results);
+      } catch {
+        toast.error('Search failed');
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchTerm, workspaceId]);
+
+  async function handleSearchResultClick(envId: string) {
+    await handleSelect(envId);
+    setSearchTerm('');
+  }
 
   async function handleCreate() {
     const name = inputRef.current?.value.trim();
@@ -43,20 +86,28 @@ export default function EnvList({ selectedId, onSelect, workspaceId }: Props) {
 
   return (
     <>
-      <div style={{ padding: 8 }}>
+      {/* Search input */}
+      <div style={{ padding: '4px' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           background: PM.bgInput, border: `1px solid ${PM.border}`,
           borderRadius: 4, padding: '4px 8px',
         }}>
-          <input placeholder="Search" style={{
-            background: 'transparent', border: 'none',
-            outline: 'none', fontSize: 13, color: PM.muted, width: '100%',
-          }} />
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setSearchTerm(''); }}
+            placeholder="Search environments"
+            style={{
+              background: 'transparent', border: 'none', outline: 'none',
+              fontSize: 13, color: PM.text, width: '100%',
+            }}
+          />
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
+
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 4px 6px' }}>
         <span style={{ fontSize: 11, fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Environments
@@ -90,14 +141,7 @@ export default function EnvList({ selectedId, onSelect, workspaceId }: Props) {
         </div>
       )}
 
-      {loading && environments.length === 0 && <div style={{ padding: '6px 4px' }}><Spinner /></div>}
-
-      {!loading && environments.length === 0 && !creating && (
-        <div style={{ fontSize: 12, color: '#4a4a4a', padding: '6px 4px', lineHeight: 1.5 }}>
-          No environments yet.<br />Create one to get started.
-        </div>
-      )}
-
+      {/* Dialogs */}
       <ActionDialog
         open={renameId !== null}
         onOpenChange={(open) => { if (!open) setRenameId(null); }}
@@ -132,7 +176,54 @@ export default function EnvList({ selectedId, onSelect, workspaceId }: Props) {
         }}
       />
 
-      {environments.map((env) => (
+      {/* ── SEARCH MODE ── */}
+      {isSearching && (
+        <>
+          {searchLoading && <div style={{ padding: '6px 4px' }}><Spinner /></div>}
+
+          {!searchLoading && searchResults.length === 0 && (
+            <div style={{ fontSize: 12, color: '#4a4a4a', padding: '6px 4px' }}>
+              No environments match "{searchTerm}".
+            </div>
+          )}
+
+          {!searchLoading && searchResults.map((env) => (
+            <div
+              key={env.id}
+              onClick={() => handleSearchResultClick(env.id)}
+              onMouseEnter={(e) => (e.currentTarget.style.background = PM.bgHover)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '5px 4px', cursor: 'pointer', borderRadius: 4,
+                fontSize: 13, color: PM.text,
+              }}
+            >
+              <span style={{
+                width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                background: env.is_active ? '#4ade80' : 'transparent',
+                border: env.is_active ? 'none' : '1px solid #555',
+              }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                {env.name}
+              </span>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* ── NORMAL MODE ── */}
+      {!isSearching && loading && environments.length === 0 && (
+        <div style={{ padding: '6px 4px' }}><Spinner /></div>
+      )}
+
+      {!isSearching && !loading && environments.length === 0 && !creating && (
+        <div style={{ fontSize: 12, color: '#4a4a4a', padding: '6px 4px', lineHeight: 1.5 }}>
+          No environments yet.<br />Create one to get started.
+        </div>
+      )}
+
+      {!isSearching && environments.map((env) => (
         <div
           key={env.id}
           onMouseEnter={() => setHoveredId(env.id)}
@@ -215,7 +306,6 @@ export default function EnvList({ selectedId, onSelect, workspaceId }: Props) {
           )}
         </div>
       ))}
-      </div>
     </>
   );
 }
