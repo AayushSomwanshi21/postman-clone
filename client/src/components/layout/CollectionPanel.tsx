@@ -91,35 +91,38 @@ export default function CollectionPanel() {
 
         {/* ── TAB BAR ── */}
         <Tabs value={activeTabId} onValueChange={setActiveTab} style={{ flexShrink: 0 }}>
-          <TabsList variant="line" style={{
-            height: 36, borderRadius: 0, justifyContent: 'flex-start', alignItems: 'flex-end',
-            background: PM.bgPanel, borderBottom: `1px solid ${PM.border}`, padding: '0 4px', gap: 2,
-          }}>
-            {tabs.map((tab) => {
-              const isActive = tab.id === activeTabId;
-              return (
-                <TabsTrigger
-                  key={tab.id} value={tab.id}
-                  className="[&::after]:hidden!"
-                  style={{
-                    height: 32, gap: 8, paddingInline: 12,
-                    borderRadius: '4px 4px 0 0',
-                    border: `1px solid ${isActive ? PM.border : 'transparent'}`,
-                    borderBottom: `1px solid ${isActive ? PM.bgContent : 'transparent'}`,
-                    background: isActive ? PM.bgContent : 'transparent',
-                    marginBottom: isActive ? -1 : 0,
-                  }}
-                >
-                  <span style={{ fontSize: 11, fontWeight: 700, color: methodColor(tab.method) }}>{tab.method}</span>
-                  <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab.name}</span>
-                  <span
-                    onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
-                    style={{ color: '#555', fontSize: 15, lineHeight: 1, marginLeft: 2 }}
-                  >×</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+          <div style={{ overflowX: 'auto', overflowY: 'clip', scrollbarWidth: 'none' }}>
+            <TabsList variant="line" style={{
+              height: 36, borderRadius: 0, justifyContent: 'flex-start', alignItems: 'flex-end',
+              background: PM.bgPanel, borderBottom: `1px solid ${PM.border}`, padding: '0 4px', gap: 2, flexWrap: 'nowrap', minWidth: 'max-content',
+            }}>
+              {tabs.map((tab) => {
+                const isActive = tab.id === activeTabId;
+                return (
+                  <TabsTrigger
+                    key={tab.id} value={tab.id}
+                    className="[&::after]:hidden!"
+                    style={{
+                      height: 32, gap: 8, paddingInline: 12,
+                      borderRadius: '4px 4px 0 0',
+                      border: `1px solid ${isActive ? PM.border : 'transparent'}`,
+                      borderBottom: `1px solid ${isActive ? PM.bgContent : 'transparent'}`,
+                      background: isActive ? PM.bgContent : 'transparent',
+                      marginBottom: isActive ? -1 : 0,
+                      flexShrink: 0
+                    }}
+                  >
+                    <span style={{ fontSize: 11, fontWeight: 700, color: methodColor(tab.method) }}>{tab.method}</span>
+                    <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab.name}</span>
+                    <span
+                      onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
+                      style={{ color: '#555', fontSize: 15, lineHeight: 1, marginLeft: 2 }}
+                    >×</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </div>
         </Tabs>
 
         {/* Breadcrumb + actions */}
