@@ -1,14 +1,14 @@
 import api from '@/lib/api';
-import type { Document, DocumentListItem, GenerateDocsRequest } from '@/lib/types';
+import type { Document, DocumentListItem, GenerateDocsRequest, PaginatedResponse } from '@/lib/types';
 
 export async function generateDocs(collectionId: string, payload?: GenerateDocsRequest) {
     const { data } = await api.post<Document>(`/documents/generate-docs/${collectionId}`, payload);
     return data;
 }
 
-export async function listDocuments(workspaceId: string) {
-    const { data } = await api.get<DocumentListItem[]>('/documents', {
-        params: { workspace_id: workspaceId },
+export async function listDocuments(workspaceId: string, offset = 0, limit = 20) {
+    const { data } = await api.get<PaginatedResponse<DocumentListItem>>('/documents', {
+        params: { workspace_id: workspaceId, offset, limit },
     });
     return data;
 }
@@ -45,13 +45,13 @@ export async function searchDocuments(
     workspaceId: string,
     query: string
 ) {
-    const { data } = await api.get<DocumentListItem[]>(`/documents/search`, {
+    const { data } = await api.get<PaginatedResponse<DocumentListItem>>(`/documents/search`, {
         params: {
             workspace_id: workspaceId,
             query: query,
         }
     });
 
-    return data;
+    return data.items;
 
 }

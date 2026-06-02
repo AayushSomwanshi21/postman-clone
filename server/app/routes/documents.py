@@ -1,8 +1,7 @@
 import re
 import markdown
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
-from typing import List
 from uuid import UUID
 from xhtml2pdf import pisa
 from io import BytesIO
@@ -12,41 +11,46 @@ from app.models.document import Document
 from app.models.environment import Environment, EnvVariable
 from app.schemas.ai import GenerateDocsRequest
 from app.schemas.document import DocumentListResponse, DocumentResponse, DocumentUpdate
+from app.schemas.pagination import PaginatedResponse
 from app.services.ai_service import (
     DocsGenerationError,
     DocsGenerationQuotaError,
     generate_collection_docs,
 )
 from app.middleware.auth import get_current_user
-from app.services.db import get_collection, get_document, get_workspace
+from app.services.db import get_collection, get_document, get_workspace, paginate_query
 from app.utils.interpolate import interpolate_content, find_unresolved_variables
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 
-@router.get("", response_model=List[DocumentListResponse])
+@router.get("", response_model=PaginatedResponse[DocumentListResponse])
 def list_documents(
     workspace_id: UUID,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
     workspace = get_workspace(
         workspace_id=workspace_id, db=db, user_id=user_id)
-    return (
+    query = (
         db.query(Document)
         .join(Collection, Document.collection_id == Collection.id)
         .filter(Collection.workspace_id == workspace.id)
-        .order_by(Document.updated_at.desc())
-        .all()
+        .order_by(Document.updated_at.desc(), Document.id.desc())
     )
+    return paginate_query(query, limit=limit, offset=offset)
 
 # ---- Search ----
 
 
-@router.get("/search", response_model=list[DocumentResponse])
+@router.get("/search", response_model=PaginatedResponse[DocumentResponse])
 def search_documents(
     workspace_id: UUID,
     query: str,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
@@ -54,19 +58,24 @@ def search_documents(
 
     q = query.strip()
     if not q:
-        return []
+        return PaginatedResponse[DocumentResponse](
+            items=[],
+            total=0,
+            limit=limit,
+            offset=offset,
+            has_more=False,
+        )
 
-    return (
+    results_query = (
         db.query(Document)
         .join(Collection, Document.collection_id == Collection.id)
         .filter(
             Collection.workspace_id == workspace_id,
             Document.name.ilike(f"%{q}%"),
         )
-        .order_by(Document.updated_at.desc())
-        .limit(20)
-        .all()
+        .order_by(Document.updated_at.desc(), Document.id.desc())
     )
+    return paginate_query(results_query, limit=limit, offset=offset)
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)

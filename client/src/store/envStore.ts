@@ -1,13 +1,17 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
-import type { Environment, EnvVariable } from '@/lib/types';
+import type { Environment, EnvVariable, PaginatedResponse } from '@/lib/types';
 
 interface EnvState {
     environments: Environment[];
     variablesByEnv: Record<string, EnvVariable[]>;
     loading: boolean;
+    loadingMore: boolean;
+    hasMore: boolean;
+    limit: number;
 
     fetchEnvironments: (workspaceId: string) => Promise<void>;
+    fetchMoreEnvironments: (workspaceId: string) => Promise<void>;
     createEnvironment: (workspaceId: string, name: string) => Promise<void>;
     updateEnvironment: (id: string, name: string) => Promise<void>;
     deleteEnvironment: (id: string) => Promise<void>;
@@ -26,14 +30,43 @@ export const useEnvStore = create<EnvState>((set, get) => ({
     environments: [],
     variablesByEnv: {},
     loading: false,
+    loadingMore: false,
+    hasMore: false,
+    limit: 20,
 
     fetchEnvironments: async (workspaceId) => {
         set({ loading: true });
-        const { data } = await api.get<Environment[]>('/environments', { params: { workspace_id: workspaceId } });
-        set({ environments: data, loading: false });
-        const active = data.find((e) => e.is_active);
+        const { data } = await api.get<PaginatedResponse<Environment>>('/environments', {
+            params: { workspace_id: workspaceId, offset: 0, limit: get().limit },
+        });
+        const environments = data.items;
+        set({ environments, loading: false, loadingMore: false, hasMore: data.has_more });
+        const active = environments.find((e) => e.is_active);
         if (active) get().fetchVariables(active.id);
-        data.forEach((e) => { if (!e.is_active) get().fetchVariables(e.id); });
+        environments.forEach((e) => { if (!e.is_active) get().fetchVariables(e.id); });
+    },
+
+    fetchMoreEnvironments: async (workspaceId) => {
+        const { loading, loadingMore, hasMore, environments, limit } = get();
+        if (loading || loadingMore || !hasMore) {
+            return;
+        }
+
+        set({ loadingMore: true });
+        try {
+            const { data } = await api.get<PaginatedResponse<Environment>>('/environments', {
+                params: { workspace_id: workspaceId, offset: environments.length, limit },
+            });
+            set((s) => ({
+                environments: [...s.environments, ...data.items],
+                loadingMore: false,
+                hasMore: data.has_more,
+            }));
+            data.items.forEach((env) => { get().fetchVariables(env.id); });
+        } catch (error) {
+            set({ loadingMore: false });
+            throw error;
+        }
     },
 
     createEnvironment: async (workspaceId, name) => {
@@ -75,8 +108,8 @@ export const useEnvStore = create<EnvState>((set, get) => ({
 
     fetchVariables: async (envId) => {
         if (get().variablesByEnv[envId]) return;
-        const { data } = await api.get<EnvVariable[]>(`/environments/${envId}/variables`);
-        set((s) => ({ variablesByEnv: { ...s.variablesByEnv, [envId]: data } }));
+        const { data } = await api.get<PaginatedResponse<EnvVariable>>(`/environments/${envId}/variables`);
+        set((s) => ({ variablesByEnv: { ...s.variablesByEnv, [envId]: data.items } }));
     },
 
     createVariable: async (envId, key, value) => {

@@ -4,6 +4,14 @@ export interface KeyValueRow {
   enabled: boolean;
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
 export interface Response {
   status_code: number;
   headers: Record<string, string>;

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import api from '@/lib/api';
-import type { Workspace } from '@/lib/types';
+import type { PaginatedResponse, Workspace } from '@/lib/types';
 import { useCollectionStore } from './collectionStore';
 import { useDocumentStore } from './documentStore';
 import { useEnvStore } from './envStore';
@@ -11,25 +11,36 @@ function resetWorkspaceScopedState() {
   useCollectionStore.setState({
     collections: [],
     requestsByCollection: {},
+    requestsHasMoreByCollection: {},
     expandedIds: new Set(),
     activeRequestId: null,
     creating: false,
     loading: true,
+    loadingMore: false,
+    hasMore: false,
+    limit: 20,
     loadingRequestIds: new Set<string>(),
+    loadingMoreRequestIds: new Set<string>(),
   });
   useDocumentStore.setState({
     documents: [],
     documentsById: {},
     selectedDocumentId: null,
     loading: true,
+    loadingMore: false,
     loadingDocumentId: null,
     regeneratingDocumentId: null,
     error: null,
+    hasMore: false,
+    limit: 20,
   });
   useEnvStore.setState({
     environments: [],
     variablesByEnv: {},
     loading: true,
+    loadingMore: false,
+    hasMore: false,
+    limit: 20,
   });
   useRequestStore.setState({
     name: null,
@@ -65,10 +76,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   activeWorkspace: null,
 
   fetchWorkspaces: async () => {
-    const { data } = await api.get<Workspace[]>('/workspaces');
+    const { data } = await api.get<PaginatedResponse<Workspace>>('/workspaces');
+    const workspaces = data.items;
     const savedId = localStorage.getItem('activeWorkspaceId');
-    const active = data.find((w) => w.id === savedId) ?? data[0] ?? null;
-    set({ workspaces: data, activeWorkspace: active });
+    const active = workspaces.find((w) => w.id === savedId) ?? workspaces[0] ?? null;
+    set({ workspaces, activeWorkspace: active });
 
     if (active) {
       resetWorkspaceScopedState();

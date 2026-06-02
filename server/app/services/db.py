@@ -1,5 +1,5 @@
 from fastapi import HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 from uuid import UUID
 
 from app.database import get_db
@@ -8,6 +8,7 @@ from app.models.collection import Collection
 from app.models.document import Document
 from app.models.workspace import Workspace
 from app.models.environment import Environment
+from app.schemas.pagination import PaginatedResponse
 
 
 def mark_collection_document_stale(
@@ -21,6 +22,23 @@ def mark_collection_document_stale(
     )
     if document and not document.is_stale:
         document.is_stale = True
+
+
+def paginate_query(
+    query: Query,
+    *,
+    limit: int,
+    offset: int,
+) -> PaginatedResponse:
+    total = query.order_by(None).count()
+    items = query.offset(offset).limit(limit).all()
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=offset + len(items) < total,
+    )
 
 
 def get_workspace(

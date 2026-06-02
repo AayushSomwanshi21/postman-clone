@@ -13,11 +13,15 @@ interface DocumentStoreState {
   documentsById: Record<string, Document>;
   selectedDocumentId: string | null;
   loading: boolean;
+  loadingMore: boolean;
   loadingDocumentId: string | null;
   regeneratingDocumentId: string | null;
   error: string | null;
+  hasMore: boolean;
+  limit: number;
 
   fetchDocuments: (workspaceId: string) => Promise<void>;
+  fetchMoreDocuments: (workspaceId: string) => Promise<void>;
   fetchDocumentById: (documentId: string) => Promise<Document>;
   generateDocument: (collectionId: string, name?: string) => Promise<Document>;
   updateDocument: (documentId: string, payload: Partial<Pick<Document, 'name' | 'content' | 'is_stale'>>) => Promise<Document>;
@@ -31,14 +35,18 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
   documentsById: {},
   selectedDocumentId: null,
   loading: false,
+  loadingMore: false,
   loadingDocumentId: null,
   regeneratingDocumentId: null,
   error: null,
+  hasMore: false,
+  limit: 20,
 
   fetchDocuments: async (workspaceId) => {
     set({ loading: true, error: null });
     try {
-      const documents = await listDocuments(workspaceId);
+      const page = await listDocuments(workspaceId, 0, get().limit);
+      const documents = page.items;
       set((state) => ({
         documents,
         documentsById: {},
@@ -46,10 +54,33 @@ export const useDocumentStore = create<DocumentStoreState>((set, get) => ({
           ? state.selectedDocumentId
           : null,
         loading: false,
+        loadingMore: false,
+        hasMore: page.has_more,
       }));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch documents';
-      set({ loading: false, error: message });
+      set({ loading: false, loadingMore: false, error: message });
+      throw error;
+    }
+  },
+
+  fetchMoreDocuments: async (workspaceId) => {
+    const { loading, loadingMore, hasMore, documents, limit } = get();
+    if (loading || loadingMore || !hasMore) {
+      return;
+    }
+
+    set({ loadingMore: true, error: null });
+    try {
+      const page = await listDocuments(workspaceId, documents.length, limit);
+      set((state) => ({
+        documents: [...state.documents, ...page.items],
+        loadingMore: false,
+        hasMore: page.has_more,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch more documents';
+      set({ loadingMore: false, error: message });
       throw error;
     }
   },

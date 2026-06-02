@@ -1,16 +1,16 @@
 import api from '@/lib/api';
-import type { Environment } from '@/lib/types';
+import type { Environment, PaginatedResponse } from '@/lib/types';
 
 export async function searchEnvironments(
     workspaceId: string,
     query: string
 ) {
-    const { data } = await api.get<Environment[]>(`/environments/search`, {
+    const { data } = await api.get<PaginatedResponse<Environment>>(`/environments/search`, {
         params: {
             workspace_id: workspaceId,
             query: query,
         }
     });
 
-    return data;
+    return data.items;
 }

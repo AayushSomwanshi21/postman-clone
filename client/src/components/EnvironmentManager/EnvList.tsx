@@ -3,6 +3,7 @@ import { MoreHorizontal, Plus, Pencil, Trash2, CheckCircle } from 'lucide-react'
 import { useEnvStore } from '@/store/envStore';
 import { ActionDialog } from '@/components/ui/action-dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger';
 import { PM } from '@/lib/constants';
 import { toast } from 'sonner';
 import { searchEnvironments } from '@/lib/environmentService';
@@ -15,7 +16,18 @@ interface Props {
 }
 
 export default function EnvList({ selectedId, onSelect, workspaceId }: Props) {
-  const { environments, loading, createEnvironment, updateEnvironment, deleteEnvironment, activateEnvironment, fetchVariables } = useEnvStore();
+  const {
+    environments,
+    loading,
+    loadingMore,
+    hasMore,
+    createEnvironment,
+    updateEnvironment,
+    deleteEnvironment,
+    activateEnvironment,
+    fetchVariables,
+    fetchMoreEnvironments,
+  } = useEnvStore();
 
   const [creating, setCreating] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -306,6 +318,14 @@ export default function EnvList({ selectedId, onSelect, workspaceId }: Props) {
           )}
         </div>
       ))}
+
+      {!isSearching && (
+        <InfiniteScrollTrigger
+          hasMore={hasMore}
+          loading={loadingMore}
+          onReachEnd={() => fetchMoreEnvironments(workspaceId)}
+        />
+      )}
     </>
   );
 }

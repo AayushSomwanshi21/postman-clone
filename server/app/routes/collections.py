@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
@@ -10,22 +9,35 @@ from app.schemas.collection import (
     CollectionCreate, CollectionUpdate, CollectionResponse, CollectionWithRequests,
     RequestCreate, RequestUpdate, RequestResponse,
 )
-from app.services.db import get_workspace, get_collection, mark_collection_document_stale
+from app.schemas.pagination import PaginatedResponse
+from app.services.db import (
+    get_workspace,
+    get_collection,
+    mark_collection_document_stale,
+    paginate_query,
+)
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 
 
 # --- Collections ---
 
-@router.get("", response_model=List[CollectionResponse])
+@router.get("", response_model=PaginatedResponse[CollectionResponse])
 def list_collections(
     workspace_id: UUID,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
     workspace = get_workspace(
         workspace_id=workspace_id, db=db, user_id=user_id)
-    return db.query(Collection).filter(Collection.workspace_id == workspace.id).all()
+    query = (
+        db.query(Collection)
+        .filter(Collection.workspace_id == workspace.id)
+        .order_by(Collection.updated_at.desc(), Collection.id.desc())
+    )
+    return paginate_query(query, limit=limit, offset=offset)
 
 
 @router.post("", response_model=CollectionResponse, status_code=201)
@@ -48,10 +60,12 @@ def create_collection(
 # ---- Search ----
 
 
-@router.get("/search", response_model=list[CollectionResponse])
+@router.get("/search", response_model=PaginatedResponse[CollectionResponse])
 def search_collections(
     workspace_id: UUID,
     query: str,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
@@ -59,18 +73,23 @@ def search_collections(
 
     q = query.strip()
     if not q:
-        return []
+        return PaginatedResponse[CollectionResponse](
+            items=[],
+            total=0,
+            limit=limit,
+            offset=offset,
+            has_more=False,
+        )
 
-    return (
+    results_query = (
         db.query(Collection)
         .filter(
             Collection.workspace_id == workspace_id,
             Collection.name.ilike(f"%{q}%"),
         )
-        .order_by(Collection.updated_at.desc())
-        .limit(20)
-        .all()
+        .order_by(Collection.updated_at.desc(), Collection.id.desc())
     )
+    return paginate_query(results_query, limit=limit, offset=offset)
 
 
 @router.get("/{collection_id}", response_model=CollectionWithRequests)
@@ -120,17 +139,19 @@ def delete_collection(
 
 # --- Requests ---
 
-@router.get("/{collection_id}/requests", response_model=List[RequestResponse])
+@router.get("/{collection_id}/requests", response_model=PaginatedResponse[RequestResponse])
 def list_requests(
     collection: Collection = Depends(get_collection),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
-    return (
+    query = (
         db.query(Request)
         .filter(Request.collection_id == collection.id)
-        .order_by(Request.position)
-        .all()
+        .order_by(Request.position.asc(), Request.id.asc())
     )
+    return paginate_query(query, limit=limit, offset=offset)
 
 
 @router.post("/{collection_id}/requests", response_model=RequestResponse, status_code=201)

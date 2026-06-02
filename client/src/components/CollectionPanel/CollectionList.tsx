@@ -8,12 +8,51 @@ import { useWorkspaceStore } from '@/store/workspaceStore';
 import RequestItem from './RequestItem';
 import { PM } from '@/lib/constants';
 import { ActionDialog } from '@/components/ui/action-dialog';
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger';
 import { toast } from 'sonner';
 import type { Collection } from '@/lib/types';
 import { searchCollections } from '@/lib/collectionService';
 
+function RequestListEnd({
+  hasMore,
+  loading,
+  onReachEnd,
+}: {
+  hasMore: boolean;
+  loading: boolean;
+  onReachEnd: () => void | Promise<void>;
+}) {
+  return (
+    <div style={{ paddingLeft: 20 }}>
+      <InfiniteScrollTrigger
+        hasMore={hasMore}
+        loading={loading}
+        onReachEnd={onReachEnd}
+      />
+    </div>
+  );
+}
+
 export default function CollectionList() {
-  const { collections, expandedIds, requestsByCollection, toggleExpand, createCollection, updateCollection, deleteCollection, creating, setCreating, loading, loadingRequestIds } =
+  const {
+    collections,
+    expandedIds,
+    requestsByCollection,
+    requestsHasMoreByCollection,
+    toggleExpand,
+    fetchMoreCollections,
+    fetchMoreRequests,
+    createCollection,
+    updateCollection,
+    deleteCollection,
+    creating,
+    setCreating,
+    loading,
+    loadingMore,
+    hasMore,
+    loadingRequestIds,
+    loadingMoreRequestIds,
+  } =
     useCollectionStore();
   const documents = useDocumentStore((s) => s.documents);
   const { createRequest } = useRequestStore();
@@ -331,14 +370,32 @@ export default function CollectionList() {
           {expandedIds.has(col.id) && (
             loadingRequestIds.has(col.id)
               ? <div style={{ padding: '4px 4px 4px 22px' }}><Spinner /></div>
-              : (requestsByCollection[col.id] ?? []).length === 0
-                ? <div style={{ padding: '4px 4px 4px 24px', fontSize: 12, color: '#666666' }}>No requests yet.</div>
-                : (requestsByCollection[col.id] ?? []).map((req) => (
-                  <RequestItem key={req.id} request={req} />
-                ))
+              : (
+                <>
+                  {(requestsByCollection[col.id] ?? []).length === 0 && (
+                    <div style={{ padding: '4px 4px 4px 24px', fontSize: 12, color: '#666666' }}>No requests yet.</div>
+                  )}
+                  {(requestsByCollection[col.id] ?? []).map((req) => (
+                    <RequestItem key={req.id} request={req} />
+                  ))}
+                  <RequestListEnd
+                    hasMore={requestsHasMoreByCollection[col.id] ?? false}
+                    loading={loadingMoreRequestIds.has(col.id)}
+                    onReachEnd={() => fetchMoreRequests(col.id)}
+                  />
+                </>
+              )
           )}
         </div>
       ))}
+
+      {!isSearching && activeWorkspace && (
+        <InfiniteScrollTrigger
+          hasMore={hasMore}
+          loading={loadingMore}
+          onReachEnd={() => fetchMoreCollections(activeWorkspace.id)}
+        />
+      )}
     </>
   );
 }

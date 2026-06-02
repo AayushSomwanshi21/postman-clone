@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
@@ -10,22 +9,30 @@ from app.schemas.environment import (
     EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse,
     VariableCreate, VariableUpdate, VariableResponse,
 )
-from app.services.db import get_workspace, get_environment
+from app.schemas.pagination import PaginatedResponse
+from app.services.db import get_workspace, get_environment, paginate_query
 
 router = APIRouter(prefix="/environments", tags=["environments"])
 
 
 # --- Environments ---
 
-@router.get("", response_model=List[EnvironmentResponse])
+@router.get("", response_model=PaginatedResponse[EnvironmentResponse])
 def list_environments(
     workspace_id: UUID,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
     workspace = get_workspace(
         workspace_id=workspace_id, db=db, user_id=user_id)
-    return db.query(Environment).filter(Environment.workspace_id == workspace.id).all()
+    query = (
+        db.query(Environment)
+        .filter(Environment.workspace_id == workspace.id)
+        .order_by(Environment.created_at.desc(), Environment.id.desc())
+    )
+    return paginate_query(query, limit=limit, offset=offset)
 
 
 @router.post("", response_model=EnvironmentResponse, status_code=201)
@@ -81,12 +88,19 @@ def activate_environment(
 
 # --- Variables ---
 
-@router.get("/{environment_id}/variables", response_model=List[VariableResponse])
+@router.get("/{environment_id}/variables", response_model=PaginatedResponse[VariableResponse])
 def list_variables(
     environment: Environment = Depends(get_environment),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
-    return db.query(EnvVariable).filter(EnvVariable.env_id == environment.id).all()
+    query = (
+        db.query(EnvVariable)
+        .filter(EnvVariable.env_id == environment.id)
+        .order_by(EnvVariable.key.asc(), EnvVariable.id.asc())
+    )
+    return paginate_query(query, limit=limit, offset=offset)
 
 
 @router.post("/{environment_id}/variables", response_model=VariableResponse, status_code=201)
@@ -142,10 +156,12 @@ def delete_variable(
 
 
 # ---- Search ----
-@router.get("/search", response_model=list[EnvironmentResponse])
+@router.get("/search", response_model=PaginatedResponse[EnvironmentResponse])
 def search_environments(
     workspace_id: UUID,
     query: str,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
 ):
@@ -153,15 +169,20 @@ def search_environments(
 
     q = query.strip()
     if not q:
-        return []
+        return PaginatedResponse[EnvironmentResponse](
+            items=[],
+            total=0,
+            limit=limit,
+            offset=offset,
+            has_more=False,
+        )
 
-    return (
+    results_query = (
         db.query(Environment)
         .filter(
             Environment.workspace_id == workspace_id,
             Environment.name.ilike(f"%{q}%"),
         )
-        .order_by(Environment.created_at.desc())
-        .limit(20)
-        .all()
+        .order_by(Environment.created_at.desc(), Environment.id.desc())
     )
+    return paginate_query(results_query, limit=limit, offset=offset)

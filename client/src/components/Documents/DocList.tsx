@@ -3,6 +3,7 @@ import { MoreHorizontal, Pencil, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { ActionDialog } from '@/components/ui/action-dialog';
 import GenerateDocumentDialog from '@/components/Documents/GenerateDocumentDialog';
 import { Spinner } from '@/components/ui/spinner';
+import { InfiniteScrollTrigger } from '@/components/ui/infinite-scroll-trigger';
 import { useDocumentStore } from '@/store/documentStore';
 import { PM } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -15,7 +16,10 @@ export default function DocList() {
         documents,
         selectedDocumentId,
         loading,
+        loadingMore,
+        hasMore,
         fetchDocumentById,
+        fetchMoreDocuments,
         generateDocument,
         regeneratingDocumentId,
         updateDocument,
@@ -289,6 +293,14 @@ export default function DocList() {
             )}
 
             {!isSearching && documents.map((document) => renderDocumentRow(document))}
+
+            {!isSearching && activeWorkspace && (
+                <InfiniteScrollTrigger
+                    hasMore={hasMore}
+                    loading={loadingMore}
+                    onReachEnd={() => fetchMoreDocuments(activeWorkspace.id)}
+                />
+            )}
         </>
     );
 }
