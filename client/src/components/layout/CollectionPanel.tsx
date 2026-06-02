@@ -77,7 +77,7 @@ export default function CollectionPanel() {
         display: 'flex', flexDirection: 'column', flexShrink: 0
       }}>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px', scrollbarWidth: 'none', }}>
           <CollectionList />
         </div>
 
