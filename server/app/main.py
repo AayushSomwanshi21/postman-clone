@@ -22,7 +22,7 @@ app = FastAPI(title="Postman Clone API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://postman-clone-eta.vercel.app/",
+        "https://postman-clone-eta.vercel.app",
         "http://localhost:5173"
     ],
     allow_credentials=True,
