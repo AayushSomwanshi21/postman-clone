@@ -3,8 +3,6 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str
-    redis_url: str = "redis://localhost:6379"
-    gemini_api_key: str
     grok_api_key: str
     grok_model_name: str
     jwt_secret: str
