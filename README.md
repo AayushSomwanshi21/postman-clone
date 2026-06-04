@@ -137,33 +137,33 @@ The project does more than render a Postman-like UI. It includes measurable back
 # Collections Page
 
 ## variable resolution
-![alt text](<Screenshot 2026-06-04 152849.png>)
+![alt text](<client/public/Screenshot 2026-06-04 152849.png>)
 
 ## method selector
-![alt text](<Screenshot 2026-06-04 152913.png>)
+![alt text](<client/public/Screenshot 2026-06-04 152913.png>)
 
 ## workspace selector
-![alt text](<Screenshot 2026-06-04 152930.png>) 
+![alt text](<client/public/Screenshot 2026-06-04 152930.png>)
 
 ## environment selector
-![alt text](<Screenshot 2026-06-04 152922.png>)
+![alt text](<client/public/Screenshot 2026-06-04 152922.png>) 
 
 ## header tab
-![alt text](<Screenshot 2026-06-04 154027.png>) 
+![alt text](<client/public/Screenshot 2026-06-04 154027.png>) 
 
 ## body tab
-![alt text](<Screenshot 2026-06-04 154004.png>) 
+![alt text](<client/public/Screenshot 2026-06-04 154004.png>) 
 
 ## authorization type selector
-![alt text](<Screenshot 2026-06-04 153935.png>) 
+![alt text](<client/public/Screenshot 2026-06-04 153935.png>) 
 
 ## authorization tab
-![alt text](<Screenshot 2026-06-04 153929.png>)
+![alt text](<client/public/Screenshot 2026-06-04 153929.png>)
 
 # Environment Page
-![alt text](<Screenshot 2026-06-04 153012.png>) 
+![alt text](<client/public/Screenshot 2026-06-04 153012.png>) 
 
 # Document Page
-![alt text](<Screenshot 2026-06-04 152951.png>)
+![alt text](<client/public/Screenshot 2026-06-04 152951.png>)
 
 
