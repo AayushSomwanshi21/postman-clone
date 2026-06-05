@@ -19,7 +19,7 @@ export default function BodyViewer() {
         language={isJson ? 'json' : 'plaintext'}
         value={value}
         theme="vs-dark"
-        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, lineNumbers: 'off', scrollBeyondLastLine: false }}
+        options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, lineNumbers: 'off', scrollBeyondLastLine: true }}
       />
     </div>
   );
